@@ -1,13 +1,14 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import './css/Navbar.css';
+import '../css/Navbar.css';
 
 function Navbar() {
     const location = useLocation();
+    const isProduct = location.pathname.startsWith("/product");
     const isNews = location.pathname === "/news";
 
     return (
-        <header className={`Navbar${isNews ? " Navbar--full" : ""}`}>
+        <header className={`Navbar${isProduct || isNews ? " Navbar--full" : ""}`}>
             <nav>
                 <ul>
                     <li><Link to="/catalog">Catalog</Link></li>

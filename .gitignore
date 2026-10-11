@@ -21,3 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# data stock (ซ่อนข้อมูลร้านจริง แต่เปิดไฟล์ .example ไว้แจก)
+src/data/products.js
+!src/data/products.example.js
+src/stock/
+

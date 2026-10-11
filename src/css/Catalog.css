@@ -28,7 +28,14 @@
     aspect-ratio: 16/9;
     object-fit: cover;
     border-radius: 20px;
+    box-shadow: 10px 12px 24px rgba(0,0,0,0.4);
     cursor: pointer;
+    transition: .3s;
+}
+
+.card-wrapper img:hover {
+    transform: translateY(-5px);
+    box-shadow: 13px 15px 24px rgba(0,0,0,0.5);
 }
 
 .small-detail {
@@ -47,6 +54,7 @@
 .product-label,
 .price-label,
 .product-price {
+    width: fit-content;
     color: var(--font2-color);
 }
 

@@ -34,6 +34,15 @@
     height: 80px;
 }
 
+.pointer-layer--shrink {
+    opacity: 0;
+}
+
+.pointer-layer--shrink .Pointer {
+    width: 0;
+    height: 0;
+}
+
 @media (pointer: coarse) {
     .pointer-layer {
         display: none;

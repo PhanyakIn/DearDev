@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import './css/Pointer.css';
+import '../css/Pointer.css';
 
 function Pointer() {
   const pointerRef = useRef(null);
@@ -12,6 +12,7 @@ function Pointer() {
   const rendered = useRef({ x: mouse.current.x, y: mouse.current.y });
   const [expanded, setExpanded] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [shrinking, setShrinking] = useState(false);
 
   useEffect(() => {
     if (!window.matchMedia('(pointer: fine)').matches) return undefined;
@@ -31,9 +32,19 @@ function Pointer() {
 
       setVisible(true);
 
-      const image = event.target instanceof Element
-        ? event.target.closest(
-            'img, .Navbar, .product-label, .price-content, .card-badge-status'
+      const onVideo = event.target instanceof Element ? event.target.closest(
+          'iframe, video, .pv-wrap'
+        )
+        : null;
+      if (onVideo) {
+        setShrinking(true);
+        setExpanded(false);
+        return;
+      }
+      setShrinking(false);
+
+      const image = event.target instanceof Element ? event.target.closest(
+          'img, .Navbar, .product-label, .price-label, .card-badge-status, .detail-more-btn, .product-contact-btns'
         ) //add more element here
         : null;
       setExpanded(Boolean(image));
@@ -43,10 +54,12 @@ function Pointer() {
       if (event.relatedTarget) return;
       setVisible(false);
       setExpanded(false);
+      setShrinking(false);
     };
     const onBlur = () => {
       setVisible(false);
       setExpanded(false);
+      setShrinking(false);
     };
 
     window.addEventListener('mousemove', onMove);
@@ -80,7 +93,7 @@ function Pointer() {
 
   return (
     <div
-        className={`pointer-layer${expanded ? ' pointer-layer--hover' : ''}${visible ? ' pointer-layer--visible' : ''}`}
+        className={`pointer-layer${expanded ? ' pointer-layer--hover' : ''}${visible ? ' pointer-layer--visible' : ''}${shrinking ? ' pointer-layer--shrink' : ''}`}
         aria-hidden="true">
         <div ref={pointerRef} className="Pointer" />
     </div>

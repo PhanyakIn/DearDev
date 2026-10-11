@@ -8,4 +8,54 @@
     background-color: var(--bg-color);
     color: var(--font-color);
     padding: 20px;
+    overflow-y: auto;
+}
+
+.detail-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+.detail-name {
+    margin: 16px 0 8px 0;
+}
+
+.detail-price {
+    font-size: 18px;
+    margin: 0;
+}
+
+.detail-price span {
+    margin: 0 8px 0 0;
+    font-weight: 200;
+}
+
+.detail-short {
+    opacity: 0.8;
+}
+
+.detail-desc {
+    line-height: 1.7;
+}
+
+.detail-more-btn {
+    display: flex;
+    font-size: 30px;
+    font-weight: 800;
+    margin-top: 50px;
+    padding: 20px 40px;
+    width: 100%;
+    justify-content: center;
+    background-color: var(--gold-color);
+    color: var(--font-color);
+    border-radius: 40px;
+    text-decoration: none;
+    transition: .4s;
+}
+
+.detail-more-btn:hover {
+    background-color: var(--base-color);
+    color: var(--font2-color);
 }
