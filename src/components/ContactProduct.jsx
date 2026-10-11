@@ -2,8 +2,6 @@ import React from "react";
 import { contact } from "../data/products";
 import "../css/ContactProduct.css";
 
-// กล่องช่องทางติดต่อท้ายหน้าสินค้า — template กลางใช้ซ้ำได้ทุกสินค้า
-// อ่านลิงก์จาก contact ใน data/products.js ช่องไหนว่างปุ่มนั้นจะไม่โชว์
 function ContactProduct() {
   return (
     <div className="product-payment">
