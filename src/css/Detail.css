@@ -1,12 +1,15 @@
 .Detail {
-    position: fixed;
+    position: sticky;
     top: 100px;
-    right: 0;
-    bottom: 0;
     width: 600px;
-    z-index: 10;
-    background-color: var(--bg-color);
-    color: var(--font-color);
+    min-width: 600px;
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
+    order: 2;
+    flex-shrink: 0;
+    z-index: 5;
+    background-color: var(--secondary-color);
+    color: var(--font2-color);
     padding: 20px;
     overflow-y: auto;
 }
@@ -56,6 +59,6 @@
 }
 
 .detail-more-btn:hover {
-    background-color: var(--base-color);
-    color: var(--font2-color);
+    background-color: var(--bg-color);
+    color: var(--gold-color);
 }

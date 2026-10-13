@@ -13,6 +13,9 @@
 }
 
 .product-payment h2 {
+  color: var(--gold-color);
+  font-weight: 600;
+  font-size: 40px;
   margin: 0;
 }
 

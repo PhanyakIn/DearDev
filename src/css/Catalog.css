@@ -1,11 +1,15 @@
 .Catalog {
+    display: flex;
+    align-items: flex-start;
     background-color: aliceblue;
-    margin-right: 600px;
     min-height: 100vh;
+    width: 100%;
 }
 
 .product-grid {
     display: flex;
+    flex: 1;
+    order: 1;
     flex-direction: column;
     list-style-type: none;
     margin: 0;

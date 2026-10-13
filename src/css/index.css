@@ -8,8 +8,8 @@
 }
 
 :root {
-    --main-color: #2d5d95;
-    --secondary-color: #74a5dd;
+    --main-color: #202020;
+    --secondary-color: #eae7e1;
     --bg-color: #202020;
     --base-color: aliceblue;
     --gold-color: #91793d;
@@ -19,4 +19,16 @@
 
 body {
   background-color: var(--base-color);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }

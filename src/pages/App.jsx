@@ -2,6 +2,7 @@ import React from 'react';
 
 import Pointer from '../components/Pointer';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer'
 import Catalog from './Catalog';
 import News from './News';
 import Contact from './Contact';
@@ -13,6 +14,7 @@ function App() {
   return (
     <div className="App">
         <Navbar/>
+        <main className="App-main">
         <Routes>
           <Route path="/" element={<Navigate to="/catalog" replace />} />
           <Route path="/catalog" element={<Catalog />} />
@@ -21,7 +23,9 @@ function App() {
 
           <Route path="/product/prod1" element={<Product1 />} />
         </Routes>
+        </main>
         <Pointer/>
+        <Footer/>
     </div>
   );
 }

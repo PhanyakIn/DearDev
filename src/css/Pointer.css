@@ -4,12 +4,16 @@
     z-index: 9999;
     pointer-events: none;
     opacity: 0;
+    visibility: hidden;
     mix-blend-mode: difference;
-    transition: opacity 180ms ease;
+    transition:
+        opacity 180ms ease,
+        visibility 180ms ease;
 }
 
 .pointer-layer--visible {
     opacity: 1;
+    visibility: visible;
 }
 
 .Pointer {
@@ -34,13 +38,23 @@
     height: 80px;
 }
 
-.pointer-layer--shrink {
+.pointer-layer--shrink,
+.pointer-layer--visible.pointer-layer--shrink {
     opacity: 0;
+    visibility: hidden;
 }
 
 .pointer-layer--shrink .Pointer {
     width: 0;
     height: 0;
+}
+
+/* Native cursor must stay usable over video controls. */
+body.custom-pointer-active iframe,
+body.custom-pointer-active video,
+body.custom-pointer-active .pv-wrap,
+body.custom-pointer-active .pv-wrap * {
+    cursor: auto;
 }
 
 @media (pointer: coarse) {
