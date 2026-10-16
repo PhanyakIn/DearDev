@@ -1,11 +1,129 @@
 .Profile {
-    position: fixed;
+    position: sticky;
     top: 100px;
-    right: 0;
-    bottom: 0;
-    width: 600px;
-    z-index: 1000;
-    background-color: var(--bg-color);
-    color: var(--font-color);
-    padding: 20px;
+    width: 100%;
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
+    flex: 1;
+    z-index: 5;
+    box-sizing: border-box;
+    background-color: var(--base-color);
+    color: var(--font2-color);
+    padding: 40px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+}
+
+.profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    background-color: var(--gold-color);
+    color: #fff;
+}
+
+.Profile h1 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.profile-role {
+    font-size: 15px;
+    opacity: 0.85;
+}
+
+.profile-bio {
+    font-size: 15px;
+    line-height: 1.7;
+    opacity: 0.95;
+}
+
+.profile-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.profile-btn {
+    position: relative;
+    flex: 1 1 200px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 18px 28px;
+    min-height: 64px;
+    border-radius: 30px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    transition: background-color .2s, transform .2s;
+}
+
+.profile-btn::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+}
+
+.profile-btn:hover {
+    transform: translateY(-2px);
+}
+
+.profile-btn:active {
+    transform: scale(.98);
+}
+
+.profile-btn svg {
+    width: 26px;
+    height: 26px;
+    fill: #ffffff;
+    flex: none;
+}
+
+.profile-btn.discord {
+    background-color: #5865F2;
+}
+
+.profile-btn.discord:hover {
+    background-color: #4752C4;
+}
+
+.profile-btn.facebook {
+    background-color: #1877F2;
+}
+
+.profile-btn.facebook:hover {
+    background-color: #166FE5;
+}
+
+.profile-note {
+    font-size: 13px;
+    opacity: 0.75;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+@media (max-width: 1100px) {
+    .Profile {
+        position: static;
+        width: 100%;
+        height: auto;
+        max-height: none;
+        flex: none;
+        overflow-y: visible;
+    }
+    .profile-note {
+        margin-top: 0;
+    }
 }

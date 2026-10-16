@@ -54,7 +54,7 @@ function Pointer() {
       setShrink(false);
 
       const image = target instanceof Element ? target.closest(
-          'img, .Navbar, .product-label, .price-label, .card-badge-status, .detail-more-btn, .product-contact-btns'
+          'img, a, button, .Navbar, .product-label, .price-label, .card-badge-status, .detail-more-btn, .product-contact-btns, .contact-btn, .profile-btn, .profile-links, .footer-nav, .footer-contact'
         ) //add more element here
         : null;
       setExpanded(Boolean(image));

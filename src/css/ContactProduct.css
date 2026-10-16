@@ -33,6 +33,7 @@
 }
 
 .contact-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -41,7 +42,14 @@
   font-size: 18px;
   text-decoration: none;
   color: #fff;
-  transition: filter .2s, transform .2s;
+  transition: filter .2s, background-color .2s, transform .2s;
+}
+
+/* Extend hit area so the 2px lift never moves the button out from under the cursor */
+.contact-btn::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 
 .contact-btn:hover {

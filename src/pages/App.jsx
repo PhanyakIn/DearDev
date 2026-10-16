@@ -22,6 +22,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
 
           <Route path="/product/prod1" element={<Product1 />} />
+          <Route path="/product/:id" element={<Product1 />} />
         </Routes>
         </main>
         <Pointer/>

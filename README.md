@@ -1,70 +1,72 @@
-# Getting Started with Create React App
+# Phanyakorn Scripter — ร้านขายซอร์สโค้ด Roblox Studio
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+เว็บร้านขายระบบ/ซอร์สโค้ด Roblox Studio (`.rbxl` / `.rbxm` + license key ต่อออเดอร์)
+สร้างด้วย React + Create React App + React Router
 
-## Available Scripts
+> Repo นี้เป็น **public** ได้อย่างปลอดภัย เพราะข้อมูลร้านจริงถูกแยกไว้ในไฟล์ที่ ignore แล้ว
+> ดูหัวข้อ [ความปลอดภัย / สิ่งที่ไม่ขึ้น GitHub](#ความปลอดภัย--สิ่งที่ไม่ขึ้น-github)
 
-In the project directory, you can run:
+## เริ่มต้นใช้งาน
 
-### `npm start`
+```bash
+npm install
+cp src/data/products.example.js src/data/products.js
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+เปิด [http://localhost:3000](http://localhost:3000)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+> `src/data/products.js` ไม่มีใน repo (ติด `.gitignore`) ต้อง copy จากไฟล์ `.example` ก่อนรันเสมอ
+> ใส่รูปสินค้า, ราคา, ลิงก์ YouTube, Discord / Facebook ของร้านในไฟล์นั้น
 
-### `npm test`
+## Scripts
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| คำสั่ง | ใช้ทำอะไร |
+|---|---|
+| `npm start` | รัน dev mode |
+| `npm run build` | build ลง `build/` (ไฟล์นี้ไม่ขึ้น GitHub) |
+| `npm test` | รัน test |
 
-### `npm run build`
+## โครงสร้าง
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+src/
+  pages/        # App, Catalog, News, Contact (หน้าเว็บ)
+  components/   # Navbar, Footer, Profile, Detail, ContactProduct, Pointer
+  data/         # products.example.js (template ขึ้น GitHub)
+  # products.js (ของจริง ไม่ขึ้น GitHub — ต้องสร้างเองจาก .example)
+  images/       # รูป public ที่ใช้ร่วมกัน (strip EXIF แล้ว)
+  stock/        # รูป/ไฟล์ขายจริง ไม่ขึ้น GitHub (ติด .gitignore)
+  css/
+public/         # index.html, manifest, icons
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## ความปลอดภัย / สิ่งที่ไม่ขึ้น GitHub
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+`.gitignore` กันไว้แล้ว:
 
-### `npm run eject`
+- `src/data/products.js` — ราคา, ลิงก์ Discord/Facebook จริง, ข้อมูลสินค้าจริง
+- `src/stock/` — รูปสินค้า, ไฟล์ขาย, QR พร้อมเพย์
+- `.env`, `.env.local`, `.env.*.local` — คีย์/รหัสผ่าน (ถ้ามีในอนาคต)
+- `/node_modules`, `/build`, `.DS_Store`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+เช็คก่อน push ทุกครั้ง:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+git status --short
+git check-ignore -v src/data/products.js src/stock/
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+ต้องขึ้น `src/data/products.js` และ `src/stock/` ว่า ignored เสมอ ห้าม `git add -f` สองตัวนี้เด็ดขาด
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+รูปที่ลง `src/images/` ต้อง strip EXIF + ย่อก่อน commit (กันหลุด GPS/รุ่นมือถือ)
 
-## Learn More
+## Deploy
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+`npm run build` แล้ว deploy โฟลเดอร์ `build/` ขึ้น host ที่ต้องการ (Vercel / Netlify / GitHub Pages ฯลฯ)
+อย่าเอาไฟล์ใน `src/stock/` ไปวางบน host สาธารณะตรงๆ ใช้ระบบส่งไฟล์หลังชำระเงินแทน
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## License
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+สงวนลิขสิทธิ์ — ดู `LICENSE`
+โค้ด frontend ใน repo นี้ดูได้อย่างเดียว ห้ามก๊อปไปขาย/แจกต่อโดยไม่ได้รับอนุญาต

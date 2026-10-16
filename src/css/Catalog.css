@@ -1,7 +1,7 @@
 .Catalog {
     display: flex;
     align-items: flex-start;
-    background-color: aliceblue;
+    background-color: var(--base-color);
     min-height: 100vh;
     width: 100%;
 }
@@ -87,6 +87,11 @@
     border-radius: 20px;
 }
 
-hr {
-    margin: 10px 0 10px 0;
+.card-wrapper hr,
+.Detail hr {
+    border: none;
+    border-top: 1px solid var(--gold-color);
+    height: 0;
+    background: none;
+    margin: 10px 0;
 }

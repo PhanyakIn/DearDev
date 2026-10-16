@@ -9,16 +9,16 @@
 
 :root {
     --main-color: #202020;
-    --secondary-color: #eae7e1;
+    --secondary-color: #fdf2dc;
     --bg-color: #202020;
-    --base-color: aliceblue;
+    --base-color: #fffaf1;
     --gold-color: #91793d;
     --font-color: #ffffff;
     --font2-color: #000000;
 }
 
 body {
-  background-color: var(--base-color);
+  background-color: var(--bg-color);
 }
 
 html,

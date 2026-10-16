@@ -1,9 +1,90 @@
 .Footer {
     display: flex;
+    flex-direction: column;
     width: 100%;
-    min-height: 300px;
     margin-top: auto;
     background-color: var(--bg-color);
     color: var(--font-color);
-    padding: 30px;
+    padding: 40px 30px 20px;
+}
+
+.footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.footer-brand,
+.footer-nav,
+.footer-contact {
+    flex: 1 1 220px;
+}
+
+.footer-brand h3 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.footer-brand p,
+.footer-note {
+    font-size: 14px;
+    line-height: 1.6;
+    opacity: 0.85;
+}
+
+.footer-nav h4,
+.footer-contact h4 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: var(--gold-color);
+}
+
+.footer-nav ul,
+.footer-contact ul {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-nav a,
+.footer-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--font-color);
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.footer-contact a svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    flex: none;
+    opacity: .9;
+}
+
+.footer-nav a:hover,
+.footer-contact a:hover {
+    text-decoration: underline;
+}
+
+.footer-bottom {
+    max-width: 1100px;
+    width: 100%;
+    margin: 30px auto 0;
+    padding-top: 15px;
+    border-top: 1px solid #4f4f4f;
+    font-size: 13px;
+    opacity: 0.8;
 }
