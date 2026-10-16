@@ -71,7 +71,7 @@
 }
 
 .contact-header h1 {
-    font-size: 48px;
+    font-size: clamp(32px, 8vw, 48px);
     font-weight: 700;
     line-height: 1.1;
 }
@@ -190,5 +190,19 @@
     }
     .profile-col {
         width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .contact-header {
+        min-height: 260px;
+        padding: 110px 20px 28px;
+    }
+    .contact-about {
+        padding: 24px 20px 8px;
+    }
+    .contact-cards {
+        padding: 16px;
+        gap: 16px;
     }
 }

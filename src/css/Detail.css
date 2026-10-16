@@ -43,6 +43,14 @@
     line-height: 1.7;
 }
 
+.Detail hr {
+    border: none;
+    border-top: 1px solid var(--gold-color);
+    height: 0;
+    background: none;
+    margin: 24px 0;
+}
+
 .detail-more-btn {
     display: flex;
     font-size: 30px;
@@ -61,4 +69,12 @@
 .detail-more-btn:hover {
     background-color: var(--bg-color);
     color: var(--gold-color);
+}
+
+/* Narrow screens: hide the preview panel entirely,
+   customers tap the product image to see details instead */
+@media (max-width: 1100px) {
+    .Detail {
+        display: none;
+    }
 }

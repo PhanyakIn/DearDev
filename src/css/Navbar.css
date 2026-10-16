@@ -68,3 +68,36 @@
     color: var(--font2-color);
     letter-spacing: 3px;
 }
+
+/* <=1100px: full-width bar on every page (same as News/product pages) */
+@media (max-width: 1100px) {
+    .Navbar {
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+    .Navbar nav {
+        flex: 1;
+        display: flex;
+    }
+    .Navbar nav ul {
+        flex: 1;
+        display: flex;
+    }
+    .Navbar li {
+        flex: 1;
+        width: auto;
+    }
+}
+
+/* Phone: compact bar */
+@media (max-width: 640px) {
+    .Navbar li {
+        height: 64px;
+    }
+    .Navbar a {
+        font-size: 20px;
+        align-items: center;
+        justify-content: center;
+    }
+}

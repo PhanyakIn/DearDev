@@ -6,7 +6,7 @@ create table if not exists products (
   id text primary key,
   name text not null,
   price integer not null default 0,
-  currency text not null default '฿THB',
+  currency text not null default 'THB',
   image_url text,
   badge text,
   short_detail text,
@@ -55,7 +55,7 @@ values (
   'prod1',
   'Movement System R6 V1',
   199,
-  '฿THB',
+  'THB',
   'REPLACE_WITH_STORAGE_PUBLIC_URL',
   'Sell',
   'Advanced Movement System Version 1 for R6 models (Only PC)',
@@ -89,7 +89,7 @@ values
 on conflict do nothing;
 
 insert into site_contact (id, discord, facebook)
-values (1, 'https://discord.com/users/611523422383636492', 'https://www.facebook.com/profile.php?id=61595086306611')
+values (1, 'REPLACE_WITH_DISCORD_URL', 'REPLACE_WITH_FACEBOOK_URL')
 on conflict (id) do update set
   discord = excluded.discord,
   facebook = excluded.facebook,

@@ -1,12 +1,13 @@
 import React from "react";
 import { useContact } from "../lib/useShop";
+import avatarImg from "../images/DearDev-solid.png";
 import '../css/Profile.css'
 
 function Profile() {
     const contact = useContact();
     return (
         <aside className="Profile">
-            <div className="profile-avatar" aria-hidden="true">DD</div>
+            <img className="profile-avatar" src={avatarImg} alt="DearDev logo" />
             <h1>DearDev</h1>
             <p className="profile-role">Roblox Studio scripter (Idea)</p>
             <p className="profile-bio">

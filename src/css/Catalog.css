@@ -22,8 +22,9 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    width: 700px;
-    height: 550px;
+    width: 100%;
+    max-width: 700px;
+    min-height: 550px;
     padding: 20px;
 }
 
@@ -63,7 +64,7 @@
 }
 
 .product-label {
-    font-size: 35px;
+    font-size: clamp(24px, 5vw, 35px);
 }
 
 .price-label {
@@ -87,11 +88,30 @@
     border-radius: 20px;
 }
 
-.card-wrapper hr,
-.Detail hr {
+.card-wrapper hr {
     border: none;
     border-top: 1px solid var(--gold-color);
     height: 0;
     background: none;
     margin: 10px 0;
+}
+
+/* Narrow screens: hide the preview panel, grid takes full width */
+@media (max-width: 1100px) {
+    .product-grid {
+        width: 100%;
+        margin: 160px 0 40px 0;
+        padding: 0 16px;
+    }
+}
+
+/* Phone: tighter cards */
+@media (max-width: 640px) {
+    .card-wrapper {
+        min-height: 0;
+        padding: 12px;
+    }
+    .product-grid {
+        padding: 0 8px;
+    }
 }

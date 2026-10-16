@@ -18,10 +18,10 @@ function Catalog() {
 
             {products.map((product) => (
             <li className="card-wrapper" id={product.id} key={product.id}
-                onMouseEnter={() => setHoveredId(product.id)}>
-                <span className="card-badge-status">{product.badge}</span>    
-                <Link to={`/product/${product.id}`}
-                    onMouseEnter={() => setHoveredId(product.id)}>
+                onMouseEnter={() => setHoveredId(product.id)}
+                onClick={() => setHoveredId(product.id)}>
+                <span className="card-badge-status">{product.badge}</span>
+                <Link to={`/product/${product.id}`}>
                     <img src={product.image} alt={product.name} className="product-img" id={`${product.id}-img`}/>
                 </Link>
                 <div className="small-detail">

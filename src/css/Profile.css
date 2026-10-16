@@ -20,13 +20,9 @@
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    background-color: var(--gold-color);
-    color: #fff;
+    object-fit: cover;
+    display: block;
+    background-color: var(--main-color);
 }
 
 .Profile h1 {

@@ -15,7 +15,7 @@
 .product-payment h2 {
   color: var(--gold-color);
   font-weight: 600;
-  font-size: 40px;
+  font-size: clamp(26px, 7vw, 40px);
   margin: 0;
 }
 
@@ -67,4 +67,15 @@
 
 .product-contact-empty {
   opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .product-payment {
+    margin: 24px 16px 0;
+    padding: 24px 16px;
+  }
+  .contact-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

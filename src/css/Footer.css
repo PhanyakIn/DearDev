@@ -88,3 +88,12 @@
     font-size: 13px;
     opacity: 0.8;
 }
+
+@media (max-width: 640px) {
+    .Footer {
+        padding: 32px 20px 16px;
+    }
+    .footer-inner {
+        gap: 28px;
+    }
+}

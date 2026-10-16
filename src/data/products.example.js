@@ -8,7 +8,7 @@ export const products = [
     id: 'prod1',
     name: 'Product 1',
     price: 1000,
-    currency: '฿THB',
+    currency: 'THB',
     image: product1Img,
     badge: 'Sell',
     shortDetail: 'short detail',
