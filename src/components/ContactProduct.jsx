@@ -1,8 +1,9 @@
 import React from "react";
-import { contact } from "../data/products";
+import { useContact } from "../lib/useShop";
 import "../css/ContactProduct.css";
 
 function ContactProduct() {
+  const contact = useContact();
   return (
     <div className="product-payment">
       <h2>Interested? Get in touch</h2>

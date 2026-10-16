@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { contact } from "../data/products";
+import { useContact } from "../lib/useShop";
 import '../css/Footer.css'
 
 function Footer() {
+    const contact = useContact();
     const year = new Date().getFullYear();
     return (
         <footer className="Footer">

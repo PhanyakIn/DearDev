@@ -8,7 +8,7 @@ import News from './News';
 import Contact from './Contact';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-import Product1 from '../stock/Product1';
+import Product1 from './Product1';
 
 function App() {
   return (

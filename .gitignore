@@ -26,5 +26,10 @@ yarn-error.log*
 # data stock (ซ่อนข้อมูลร้านจริง แต่เปิดไฟล์ .example ไว้แจก)
 src/data/products.js
 !src/data/products.example.js
-src/stock/
+# โค้ดหน้ารายละเอียดสินค้าอยู่ใน repo แล้ว (src/pages/Product1.jsx)
+# เหลือ ignore แค่ไฟล์ขายจริงใน stock เท่านั้น
+src/stock/images/
+src/stock/files/
+*.rbxl
+*.rbxm
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { toYouTubeEmbed } from "./products";
+import { toYouTubeEmbed } from "../lib/youtube";
 import "../css/ProductVideo.css";
 
 function ProductVideo({ videoUrl, title = "product video", autoplay = false }) {

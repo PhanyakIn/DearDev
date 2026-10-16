@@ -1,11 +1,12 @@
 import React from "react";
 import Profile from "../components/Profile";
-import { contact } from "../data/products";
+import { useContact } from "../lib/useShop";
 import '../css/Contact.css'
 
 import bgimg from '../images/bg-contact.jpg';
 
 function Contact() {
+    const contact = useContact();
     return (
         <div className="Contact">
             <div className="contact-body">

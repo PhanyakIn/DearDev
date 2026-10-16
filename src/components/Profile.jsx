@@ -1,8 +1,9 @@
 import React from "react";
-import { contact } from "../data/products";
+import { useContact } from "../lib/useShop";
 import '../css/Profile.css'
 
 function Profile() {
+    const contact = useContact();
     return (
         <aside className="Profile">
             <div className="profile-avatar" aria-hidden="true">DD</div>

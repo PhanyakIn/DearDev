@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Detail from "../components/Detail";
-import { products, getProductById } from "../data/products";
+import { useProducts, getProductById } from "../lib/useShop";
 import '../css/Catalog.css';
 
 function Catalog() {
-    const [hoveredId, setHoveredId] = useState(products[0]?.id);
-    const hoveredProduct = getProductById(hoveredId) || products[0];
+    const { products, loading, error } = useProducts();
+    const [hoveredId, setHoveredId] = useState(null);
+    if (loading) return <div className="Catalog"><p>Loading products…</p></div>;
+    if (error) return <div className="Catalog"><p>Failed to load products.</p></div>;
+    if (!products?.length) return <div className="Catalog"><p>No products yet.</p></div>;
+    const hoveredProduct = getProductById(products, hoveredId || products[0]?.id) || products[0];
     return (
         <div className="Catalog">
         <Detail product={hoveredProduct} />
