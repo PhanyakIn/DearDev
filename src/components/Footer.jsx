@@ -9,7 +9,7 @@ function Footer() {
         <footer className="Footer">
             <div className="footer-inner">
                 <div className="footer-brand">
-                    <h3>Phanyakorn Scripter</h3>
+                    <h3>DearDev</h3>
                     <p>Roblox Studio source code &amp; systems. Buy once, download instantly after payment.</p>
                 </div>
                 <nav className="footer-nav" aria-label="Footer">
@@ -34,7 +34,7 @@ function Footer() {
                 </div>
             </div>
             <div className="footer-bottom">
-                <p>&copy; {year} Phanyakorn Scripter. All rights reserved.</p>
+                <p>&copy; {year} DearDev. All rights reserved.</p>
             </div>
         </footer>
     );

@@ -1,4 +1,4 @@
-# Phanyakorn Scripter — ร้านขายซอร์สโค้ด Roblox Studio
+# DearDev — ร้านขายซอร์สโค้ด Roblox Studio
 
 เว็บร้านขายระบบ/ซอร์สโค้ด Roblox Studio (`.rbxl` / `.rbxm` + license key ต่อออเดอร์)
 สร้างด้วย React + Create React App + React Router

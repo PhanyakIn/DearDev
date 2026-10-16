@@ -19,7 +19,7 @@ function Contact() {
                 <section className="contact-about">
                     <h2>Hi, I&apos;m Idea</h2>
                     <p>
-                        I&apos;m Phanyakorn, a Roblox Studio scripter. I sell clean, documented
+                        I&apos;m Idea, a Roblox Studio scripter behind DearDev. I sell clean, documented
                         source code (place files and models) so you can ship your game faster.
                         Every purchase on this site includes instant download + a license key
                         for updates and support.

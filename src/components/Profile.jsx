@@ -5,8 +5,8 @@ import '../css/Profile.css'
 function Profile() {
     return (
         <aside className="Profile">
-            <div className="profile-avatar" aria-hidden="true">PS</div>
-            <h1>Phanyakorn Scripter</h1>
+            <div className="profile-avatar" aria-hidden="true">DD</div>
+            <h1>DearDev</h1>
             <p className="profile-role">Roblox Studio scripter (Idea)</p>
             <p className="profile-bio">
                 I build ready-to-use Roblox systems and sell the source code
