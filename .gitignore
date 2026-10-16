@@ -33,3 +33,5 @@ src/stock/files/
 *.rbxl
 *.rbxm
 
+
+.vscode
