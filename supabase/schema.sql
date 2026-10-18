@@ -94,3 +94,54 @@ on conflict (id) do update set
   discord = excluded.discord,
   facebook = excluded.facebook,
   updated_at = now();
+
+-- 6. Digital file location per product (path inside the PRIVATE storage bucket)
+--    Never store a public URL here — downloads go through signed URLs only.
+alter table products add column if not exists file_path text;
+
+-- 7. Orders (PRIVATE — no anon access; only the server via service_role)
+--    status: pending | paid | rejected | refunded
+create table if not exists orders (
+  id               uuid primary key default gen_random_uuid(),
+  product_id       text references products(id),
+  email            text,
+  amount           integer not null default 0,      -- satang (THB * 100)
+  currency         text not null default 'THB',
+  status           text not null default 'pending',
+  license_key      text unique,
+  slip_ref         text,                             -- bank reference on the slip (dedupe)
+  slip_payload     jsonb,                            -- raw SlipOK response (audit trail)
+  qr_expires_at    timestamptz,
+  download_count   integer not null default 0,
+  paid_at          timestamptz,
+  created_at       timestamptz not null default now()
+);
+
+-- One order per slip reference → blocks re-using the same slip twice.
+create unique index if not exists orders_slip_ref_idx
+  on orders (slip_ref) where slip_ref is not null;
+
+create index if not exists orders_email_idx on orders (email);
+
+-- RLS: deny all for anon. The service_role key (server only) bypasses RLS.
+alter table orders enable row level security;
+-- (no policy is created on purpose → anon cannot read/write orders)
+
+-- 8. Atomic guarded increment so downloads cannot exceed the limit.
+--    Returns the updated row, or NULL when unpaid or already at the cap.
+create or replace function consume_download(p_order_id uuid, p_max int default 3)
+returns orders
+language plpgsql
+as $$
+declare
+  r orders;
+begin
+  update orders
+     set download_count = download_count + 1
+   where id = p_order_id
+     and status = 'paid'
+     and download_count < p_max
+  returning * into r;
+  return r;
+end;
+$$;

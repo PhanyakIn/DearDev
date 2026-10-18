@@ -1,0 +1,119 @@
+.Success {
+  background-color: var(--base-color);
+  min-height: 100vh;
+  padding: 60px 24px 40px;
+  margin-top: 100px;
+  color: var(--font2-color);
+}
+
+.Success h1 {
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.success-product {
+  text-align: center;
+  opacity: 0.85;
+  margin: 0 0 24px;
+}
+
+.success-card {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px;
+  border-radius: 20px;
+  background-color: var(--bg-color);
+  color: var(--font-color);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  box-shadow: 10px 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.success-label {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.success-key {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.success-key code {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+
+.success-key button {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: var(--font-color);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.success-download-note {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.success-download {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 999px;
+  background-color: var(--main-color);
+  color: var(--font-color);
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 600;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.success-download:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.success-download.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.success-hint {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.success-back {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.success-back a {
+  color: var(--font2-color);
+  opacity: 0.85;
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .Success {
+    padding: 32px 16px;
+    margin-top: 64px;
+  }
+  .success-card {
+    padding: 24px 18px;
+  }
+}
