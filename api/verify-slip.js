@@ -106,7 +106,7 @@ module.exports = async (req, res) => {
       return sendJson(res, 422, {
         status: 'pending',
         code: 1013,
-        message: 'ยอดเงินบนสลิปไม่ตรงกับออเดอร์',
+        message: 'The amount on the slip does not match this order.',
       });
     }
 
@@ -136,7 +136,7 @@ module.exports = async (req, res) => {
         return sendJson(res, 422, {
           status: 'rejected',
           code: 1012,
-          message: 'สลิปนี้ถูกใช้ไปแล้ว',
+          message: 'This slip has already been used.',
         });
       }
       throw e;
@@ -162,7 +162,7 @@ module.exports = async (req, res) => {
     try {
       await sendDownloadEmail({
         to: order.email,
-        productName: product.name || 'สินค้าของคุณ',
+        productName: product.name || 'Your product',
         licenseKey,
         downloadUrl,
         limit: config.downloadLimit,

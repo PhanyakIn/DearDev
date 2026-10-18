@@ -6,9 +6,11 @@ function Navbar() {
     const location = useLocation();
     const isProduct = location.pathname.startsWith("/product");
     const isNews = location.pathname === "/news";
+    const isCheckout =
+        location.pathname.startsWith("/checkout") || location.pathname === "/success";
 
     return (
-        <header className={`Navbar${isProduct || isNews ? " Navbar--full" : ""}`}>
+        <header className={`Navbar${isProduct || isNews || isCheckout ? " Navbar--full" : ""}`}>
             <nav>
                 <ul>
                     <li><Link to="/catalog">Catalog</Link></li>

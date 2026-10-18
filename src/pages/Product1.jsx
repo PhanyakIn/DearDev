@@ -69,13 +69,9 @@ function Product1() {
               </ul>
             </div>
           )}
-
-          <Link className="product1-buy" to={`/checkout/${product.id}`}>
-            ซื้อเลย — จ่ายผ่าน PromptPay
-          </Link>
         </div>
       </div>
-      <ContactProduct />
+      <ContactProduct productId={product.id} />
     </div>
   );
 }

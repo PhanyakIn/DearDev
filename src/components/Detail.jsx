@@ -31,7 +31,7 @@ function Detail({ product }) {
             <p className="detail-short">{product.shortDetail}</p>
             <hr />
             <p className="detail-desc">{product.description}</p>
-            <Link to={`/product/${product.id}`} className="detail-more-btn">Check out</Link>
+            <Link to={`/product/${product.id}`} className="detail-more-btn">More</Link>
         </div>
     );
 }

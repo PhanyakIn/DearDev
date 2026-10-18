@@ -51,7 +51,7 @@ async function verifySlip({ data, url, imageBase64, imageMime, amountTHB, log = 
   return {
     ok: false,
     code: json.code || res.status,
-    message: json.message || 'ตรวจสอบสลิปไม่สำเร็จ',
+    message: json.message || 'Slip verification failed',
     data: json.data || null,
   };
 }

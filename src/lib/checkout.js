@@ -49,7 +49,7 @@ export function fileToBase64(file) {
       const result = String(reader.result || '');
       resolve(result.includes(',') ? result.split(',')[1] : result);
     };
-    reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    reader.onerror = () => reject(new Error('Could not read the file'));
     reader.readAsDataURL(file);
   });
 }

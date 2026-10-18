@@ -12,6 +12,17 @@
   margin: 0 0 8px;
 }
 
+.checkout-image {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 20px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 10px 12px 24px rgba(0, 0, 0, 0.25);
+}
+
 .checkout-product {
   text-align: center;
   opacity: 0.85;
@@ -19,7 +30,7 @@
 }
 
 .checkout-card {
-  max-width: 460px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 32px;
   border-radius: 20px;
@@ -54,20 +65,21 @@
 }
 
 .checkout-card button {
-  padding: 12px 20px;
+  padding: 20px 20px;
   border-radius: 999px;
+  margin: 50px 0 50px 0;
   border: none;
-  background-color: var(--main-color);
+  background-color: var(--gold-color);
   color: var(--font-color);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   cursor: pointer;
   transition: filter 0.2s, transform 0.2s;
 }
 
 .checkout-card button:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  filter: brightness(1.3);
+  transform: translateY(-4px);
 }
 
 .checkout-card button:disabled {

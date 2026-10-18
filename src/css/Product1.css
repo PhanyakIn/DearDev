@@ -86,25 +86,6 @@
   gap: 10px;
 }
 
-.product1-buy {
-  margin-top: 20px;
-  align-self: flex-start;
-  display: inline-block;
-  padding: 14px 32px;
-  border-radius: 999px;
-  background-color: var(--main-color);
-  color: var(--font-color);
-  text-decoration: none;
-  font-size: 17px;
-  font-weight: 600;
-  transition: filter 0.2s, transform 0.2s;
-}
-
-.product1-buy:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
 
 @media (max-width: 900px) {
   .product1-layout {

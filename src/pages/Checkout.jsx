@@ -71,12 +71,12 @@ function Checkout() {
         navigate(`/success?orderId=${encodeURIComponent(charge.orderId)}`);
         return;
       }
-      setNotice(res.message || "ยังตรวจสอบไม่สำเร็จ กรุณาลองใหม่หรือติดต่อร้าน");
+      setNotice(res.message || "Verification failed. Please try again or contact the shop.");
     } catch (err) {
       if (err.data && err.data.status === "rejected") {
-        setError(err.data.message || "สลิปไม่ผ่านการตรวจสอบ");
+        setError(err.data.message || "The slip did not pass verification.");
       } else if (err.data && err.data.retryable) {
-        setNotice(err.data.message || "กรุณารอสักครู่แล้วลองใหม่");
+        setNotice(err.data.message || "Please wait a moment and try again.");
       } else {
         setError(err.message);
       }
@@ -87,7 +87,14 @@ function Checkout() {
 
   return (
     <div className="Checkout">
-      <h1>ชำระเงิน</h1>
+      {product?.image && (
+        <img
+          className="checkout-image"
+          src={product.image}
+          alt={product.name || "Product"}
+        />
+      )}
+      <h1>Checkout</h1>
       {product && (
         <p className="checkout-product">
           {product.name} — <strong>{product.price.toLocaleString()} {product.currency}</strong>
@@ -96,7 +103,7 @@ function Checkout() {
 
       {!charge ? (
         <form className="checkout-card" onSubmit={createQr}>
-          <label htmlFor="email">อีเมลสำหรับรับลิงก์ดาวน์โหลด</label>
+          <label htmlFor="email">Email to receive your download link</label>
           <input
             id="email"
             type="email"
@@ -106,25 +113,25 @@ function Checkout() {
             placeholder="you@example.com"
           />
           <button type="submit" disabled={busy}>
-            {busy ? "กำลังสร้าง QR…" : "สร้าง PromptPay QR"}
+            {busy ? "Creating QR…" : "Generate PromptPay QR"}
           </button>
           {error && <p className="checkout-error">{error}</p>}
         </form>
       ) : (
         <div className="checkout-card">
-          <p className="checkout-step">สแกนจ่ายด้วยแอปธนาคาร</p>
+          <p className="checkout-step">Scan and pay with your banking app</p>
           <img className="checkout-qr" src={charge.qr} alt="PromptPay QR" />
           <p className="checkout-amount">{formatTHB(charge.amount)} {charge.currency}</p>
           {secondsLeft != null && (
             <p className={`checkout-timer${secondsLeft === 0 ? " expired" : ""}`}>
               {secondsLeft > 0
-                ? `QR หมดอายุใน ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`
-                : "QR หมดอายุแล้ว — กรุณาสร้างใหม่"}
+                ? `QR expires in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`
+                : "QR expired — please generate a new one"}
             </p>
           )}
 
           <hr />
-          <p className="checkout-step">จ่ายแล้ว? อัปโหลดสลิปเพื่อรับสินค้าทันที</p>
+          <p className="checkout-step">Already paid? Upload your slip to get your product instantly</p>
           <form onSubmit={sendSlip}>
             <input
               type="file"
@@ -132,7 +139,7 @@ function Checkout() {
               onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
             />
             <button type="submit" disabled={busy || !slipFile || secondsLeft === 0}>
-              {busy ? "กำลังตรวจสอบสลิป…" : "ยืนยันการชำระเงิน"}
+              {busy ? "Verifying slip…" : "Confirm payment"}
             </button>
           </form>
           {error && <p className="checkout-error">{error}</p>}
@@ -148,13 +155,13 @@ function Checkout() {
               setError("");
             }}
           >
-            เริ่มใหม่
+            Start over
           </button>
         </div>
       )}
 
       <p className="checkout-back">
-        <Link to={`/product/${id}`}>← กลับไปหน้าสินค้า</Link>
+        <Link to={`/product/${id}`}>← Back to product</Link>
       </p>
     </div>
   );

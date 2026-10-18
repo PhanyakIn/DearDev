@@ -38,34 +38,34 @@ function Success() {
     }
   };
 
-  if (status === "loading") return <div className="Success"><p>กำลังโหลด…</p></div>;
-  if (status === "missing") return <div className="Success"><p>ไม่พบเลขออเดอร์</p><Link to="/catalog">กลับร้านค้า</Link></div>;
-  if (status === "error") return <div className="Success"><p>โหลดข้อมูลออเดอร์ไม่สำเร็จ</p><Link to="/catalog">กลับร้านค้า</Link></div>;
+  if (status === "loading") return <div className="Success"><p>Loading…</p></div>;
+  if (status === "missing") return <div className="Success"><p>Order not found</p><Link to="/catalog">Back to store</Link></div>;
+  if (status === "error") return <div className="Success"><p>Could not load order details</p><Link to="/catalog">Back to store</Link></div>;
 
   const paid = order.status === "paid";
 
   return (
     <div className="Success">
-      <h1>{paid ? "ชำระเงินสำเร็จ 🎉" : "สถานะออเดอร์"}</h1>
+      <h1>{paid ? "Payment successful 🎉" : "Order status"}</h1>
       {order.productName && <p className="success-product">{order.productName}</p>}
 
       {!paid ? (
         <div className="success-card">
           <p>
-            สถานะ: <strong>{order.status}</strong>
+            Status: <strong>{order.status}</strong>
           </p>
-          <p>หากชำระเงินแล้วแต่ยังไม่ได้รับสินค้า กรุณาติดต่อร้านพร้อมสลิป</p>
+          <p>If you have already paid but have not received your product, please contact the shop with your slip.</p>
         </div>
       ) : (
         <div className="success-card">
           <p className="success-label">License key</p>
           <div className="success-key">
             <code>{order.licenseKey}</code>
-            <button type="button" onClick={copyKey}>{copied ? "คัดลอกแล้ว" : "คัดลอก"}</button>
+            <button type="button" onClick={copyKey}>{copied ? "Copied" : "Copy"}</button>
           </div>
 
           <p className="success-download-note">
-            ดาวน์โหลดได้อีก <strong>{order.remaining}</strong> / {order.downloadLimit} ครั้ง
+            <strong>{order.remaining}</strong> of {order.downloadLimit} downloads remaining
           </p>
           {order.remaining > 0 ? (
             <a
@@ -75,17 +75,17 @@ function Success() {
               rel="noreferrer"
               onClick={() => setTimeout(load, 1500)}
             >
-              ดาวน์โหลดสินค้า
+              Download product
             </a>
           ) : (
-            <span className="success-download disabled">ครบจำนวนดาวน์โหลดแล้ว</span>
+            <span className="success-download disabled">Download limit reached</span>
           )}
-          <p className="success-hint">ลิงก์นี้ถูกส่งไปที่อีเมลของคุณแล้วด้วย</p>
+          <p className="success-hint">This link was also sent to your email.</p>
         </div>
       )}
 
       <p className="success-back">
-        <Link to="/catalog">← กลับร้านค้า</Link>
+        <Link to="/catalog">← Back to store</Link>
       </p>
     </div>
   );
