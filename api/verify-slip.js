@@ -6,29 +6,68 @@
 const { rest } = require('../server/supabase');
 const { readJsonBody, sendJson } = require('../server/http');
 const { config } = require('../server/config');
-const { verifySlip } = require('../server/payments/slipok');
+const { verifySlip, describeCode } = require('../server/payments/slipok');
 const { generateLicenseKey } = require('../server/license');
 const { sendDownloadEmail } = require('../server/email');
 const promptpay = require('../server/payments/promptpay');
 
-// SlipOK error codes → how we treat them.
-// retryable: keep the order pending so the buyer can try again later.
-const RETRYABLE_CODES = new Set([1010]); // 1010 = bank delay (BBL/SCB)
+// Only these codes mean "this slip can never be valid for this order".
+// Everything else (blurry photo, e-wallet slip, bank delay, outage) leaves the
+// order pending, so one bad upload never destroys a paid customer's order.
+const REJECT_CODES = new Set([1011, 1012, 1013, 1014]);
+
+const ORDER_COLUMNS =
+  'id,product_id,email,amount,currency,status,license_key,download_count,qr_expires_at,slip_payload';
 
 async function fetchOrder(orderId) {
   const rows = await rest(
-    `orders?select=id,product_id,email,amount,currency,status,license_key,download_count` +
-      `&id=eq.${encodeURIComponent(orderId)}&limit=1`,
+    `orders?select=${ORDER_COLUMNS}&id=eq.${encodeURIComponent(orderId)}&limit=1`,
   );
   return rows && rows[0];
 }
 
-async function fetchProductName(productId) {
-  if (!productId) return '';
+async function fetchProduct(productId) {
+  if (!productId) return {};
   const rows = await rest(
     `products?select=name,file_path&id=eq.${encodeURIComponent(productId)}&limit=1`,
   );
   return (rows && rows[0]) || {};
+}
+
+// Attempts are tracked inside slip_payload so no extra column is needed.
+function attemptCount(order) {
+  const payload = order && order.slip_payload;
+  if (payload && typeof payload === 'object' && Number.isFinite(Number(payload.attempts))) {
+    return Number(payload.attempts);
+  }
+  return 0;
+}
+
+// Writes the attempt counter (and optionally a new status) in one round-trip.
+// Filtered on status=pending so a concurrently-fulfilled order is never touched.
+async function recordAttempt(orderId, order, { status, error } = {}) {
+  const attempts = attemptCount(order) + 1;
+  const body = {
+    slip_payload: {
+      attempts,
+      lastAttemptAt: new Date().toISOString(),
+      ...(error ? { error } : {}),
+    },
+  };
+  if (status) body.status = status;
+  try {
+    await rest(`orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending`, {
+      method: 'PATCH',
+      body,
+    });
+  } catch {
+    /* best effort — never block the buyer on a bookkeeping write */
+  }
+  return attempts;
+}
+
+function base64Bytes(base64) {
+  return Math.ceil((String(base64 || '').length * 3) / 4);
 }
 
 module.exports = async (req, res) => {
@@ -69,7 +108,38 @@ module.exports = async (req, res) => {
       return sendJson(res, 409, { status: order.status, error: 'Order is not payable' });
     }
 
-    const product = await fetchProductName(order.product_id);
+    // Payment window: the QR countdown is a UX hint, but a buyer who already
+    // transferred must still be able to claim their product. We only close the
+    // order once the grace period after expiry has also passed.
+    const expiresAt = order.qr_expires_at ? new Date(order.qr_expires_at).getTime() : 0;
+    if (expiresAt && Date.now() > expiresAt + config.qrGraceMinutes * 60 * 1000) {
+      await recordAttempt(orderId, order, { status: 'expired', error: 'payment window closed' });
+      return sendJson(res, 410, {
+        status: 'expired',
+        code: 1015,
+        message:
+          'This payment window has closed. If you have already paid, please contact the shop with your slip.',
+      });
+    }
+
+    // Cap retries: each SlipOK call costs a credit.
+    if (attemptCount(order) >= config.maxVerifyAttempts) {
+      return sendJson(res, 429, {
+        status: 'pending',
+        code: 1029,
+        message: 'Too many attempts for this order. Please contact the shop for help.',
+      });
+    }
+
+    if (slip.imageBase64 && base64Bytes(slip.imageBase64) > config.maxSlipBytes) {
+      return sendJson(res, 413, {
+        status: 'pending',
+        code: 1020,
+        message: 'That slip image is too large. Please upload a smaller photo.',
+      });
+    }
+
+    const product = await fetchProduct(order.product_id);
     const amountTHB = promptpay.satangToTHB(order.amount);
 
     const result = await verifySlip({
@@ -82,20 +152,18 @@ module.exports = async (req, res) => {
     });
 
     if (!result.ok) {
-      const retryable = RETRYABLE_CODES.has(Number(result.code));
-      if (!retryable) {
-        // Clearly invalid (fake / wrong amount / wrong receiver / duplicate):
-        // mark rejected so it leaves the pending queue.
-        await rest(`orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending`, {
-          method: 'PATCH',
-          body: { status: 'rejected', slip_payload: { error: result } },
-        });
-      }
-      return sendJson(res, retryable ? 202 : 422, {
-        status: retryable ? 'pending' : 'rejected',
+      const terminal = REJECT_CODES.has(Number(result.code));
+      // Terminal → mark rejected so it leaves the pending queue.
+      // Otherwise stay pending so the buyer can upload the right slip.
+      await recordAttempt(orderId, order, {
+        status: terminal ? 'rejected' : undefined,
+        error: result,
+      });
+      return sendJson(res, terminal ? 422 : 202, {
+        status: terminal ? 'rejected' : 'pending',
         code: result.code,
-        message: result.message,
-        retryable,
+        message: describeCode(result.code, result.data),
+        retryable: !terminal,
       });
     }
 
@@ -103,8 +171,12 @@ module.exports = async (req, res) => {
     const slipData = result.data;
     const slipAmountSatang = Math.round(Number(slipData.amount) * 100);
     if (Number.isFinite(slipAmountSatang) && slipAmountSatang !== order.amount) {
+      await recordAttempt(orderId, order, {
+        status: 'rejected',
+        error: 'amount mismatch',
+      });
       return sendJson(res, 422, {
-        status: 'pending',
+        status: 'rejected',
         code: 1013,
         message: 'The amount on the slip does not match this order.',
       });
@@ -122,17 +194,14 @@ module.exports = async (req, res) => {
           status: 'paid',
           paid_at: new Date().toISOString(),
           slip_ref: transRef || null,
-          slip_payload: slipData,
+          slip_payload: { ...slipData, attempts: attemptCount(order) + 1 },
           license_key: licenseKey,
         },
       });
     } catch (e) {
       if (e.status === 409) {
         // Slip reference already used by another order → duplicate slip.
-        await rest(`orders?id=eq.${encodeURIComponent(orderId)}&status=eq.pending`, {
-          method: 'PATCH',
-          body: { status: 'rejected', slip_payload: { error: 'duplicate slip', transRef } },
-        });
+        await recordAttempt(orderId, order, { status: 'rejected', error: 'duplicate slip' });
         return sendJson(res, 422, {
           status: 'rejected',
           code: 1012,

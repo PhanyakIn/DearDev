@@ -1,0 +1,45 @@
+.pay-help {
+  margin-top: 8px;
+  padding: 16px 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.pay-help-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--gold-color);
+}
+
+.pay-help-text {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.pay-help-links {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pay-help-link {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--font-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.pay-help-link:hover {
+  background-color: var(--gold-color);
+  transform: translateY(-2px);
+}

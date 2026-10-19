@@ -7,8 +7,11 @@ const { sendJson } = require('../server/http');
 const { config } = require('../server/config');
 
 function normalizeRpcRow(value) {
-  if (Array.isArray(value)) return value[0] || null;
-  return value || null;
+  const row = Array.isArray(value) ? value[0] : value;
+  // PostgREST serialises a NULL composite (the function returned no row) as an
+  // object whose every field is null — not as JSON null. Treat that as "no row".
+  if (!row || row.id == null) return null;
+  return row;
 }
 
 module.exports = async (req, res) => {

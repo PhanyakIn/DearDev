@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { fetchProductById } from "../lib/shopApi";
-import { startCheckout, submitSlip, fileToBase64 } from "../lib/checkout";
+import { startCheckout, submitSlip, prepareSlipImage } from "../lib/checkout";
+import PaymentMethods from "../components/PaymentMethods";
+import PayHelp from "../components/PayHelp";
 import "../css/Checkout.css";
 
 function formatTHB(satang) {
@@ -30,6 +32,7 @@ function Checkout() {
   const [email, setEmail] = useState("");
   const [charge, setCharge] = useState(null); // { orderId, qr, amount, expiresAt }
   const [slipFile, setSlipFile] = useState(null);
+  const [slipInfo, setSlipInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,10 +65,14 @@ function Checkout() {
     if (!slipFile || !charge) return;
     setBusy(true);
     try {
-      const imageBase64 = await fileToBase64(slipFile);
+      // Downscale in the browser so the upload stays under Vercel's body limit.
+      setNotice("Preparing your slip…");
+      const prepared = await prepareSlipImage(slipFile);
+      setSlipInfo(`Ready to send — ${Math.max(1, Math.round(prepared.bytes / 1024))} KB`);
+      setNotice("");
       const res = await submitSlip(charge.orderId, {
-        imageBase64,
-        imageMime: slipFile.type || "image/jpeg",
+        imageBase64: prepared.imageBase64,
+        imageMime: prepared.imageMime,
       });
       if (res.status === "paid") {
         navigate(`/success?orderId=${encodeURIComponent(charge.orderId)}`);
@@ -73,7 +80,14 @@ function Checkout() {
       }
       setNotice(res.message || "Verification failed. Please try again or contact the shop.");
     } catch (err) {
-      if (err.data && err.data.status === "rejected") {
+      setSlipInfo("");
+      if (err.status === 413) {
+        setError(err.message);
+      } else if (err.status === 429) {
+        setNotice(err.message || "Too many attempts. Please wait a moment and try again.");
+      } else if (err.data && err.data.status === "expired") {
+        setError(err.data.message || "This payment window has closed. Please contact the shop.");
+      } else if (err.data && err.data.status === "rejected") {
         setError(err.data.message || "The slip did not pass verification.");
       } else if (err.data && err.data.retryable) {
         setNotice(err.data.message || "Please wait a moment and try again.");
@@ -112,10 +126,12 @@ function Checkout() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
           />
+          <PaymentMethods />
           <button type="submit" disabled={busy}>
             {busy ? "Creating QR…" : "Generate PromptPay QR"}
           </button>
           {error && <p className="checkout-error">{error}</p>}
+          <PayHelp />
         </form>
       ) : (
         <div className="checkout-card">
@@ -126,9 +142,11 @@ function Checkout() {
             <p className={`checkout-timer${secondsLeft === 0 ? " expired" : ""}`}>
               {secondsLeft > 0
                 ? `QR expires in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`
-                : "QR expired — please generate a new one"}
+                : "QR expired — if you already paid, upload your slip below; otherwise go back and generate a new QR"}
             </p>
           )}
+
+          <PayHelp />
 
           <hr />
           <p className="checkout-step">Already paid? Upload your slip to get your product instantly</p>
@@ -136,9 +154,19 @@ function Checkout() {
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/jfif"
-              onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                setSlipFile(e.target.files?.[0] || null);
+                setSlipInfo("");
+                setError("");
+                setNotice("");
+              }}
             />
-            <button type="submit" disabled={busy || !slipFile || secondsLeft === 0}>
+            <p className="checkout-hint">
+              Use the slip from your banking app. E-wallet slips (e.g. TrueMoney) cannot be
+              verified automatically — contact us if that is all you have.
+            </p>
+            {slipInfo && <p className="checkout-hint">{slipInfo}</p>}
+            <button type="submit" disabled={busy || !slipFile}>
               {busy ? "Verifying slip…" : "Confirm payment"}
             </button>
           </form>
@@ -151,6 +179,7 @@ function Checkout() {
             onClick={() => {
               setCharge(null);
               setSlipFile(null);
+              setSlipInfo("");
               setNotice("");
               setError("");
             }}

@@ -31,6 +31,20 @@ module.exports = async (req, res) => {
   try {
     promptpay.assertProxy();
 
+    // Guard against spamming order creation (and burning QR/DB writes).
+    const since = new Date(
+      Date.now() - config.checkoutWindowMinutes * 60 * 1000,
+    ).toISOString();
+    const recent = await rest(
+      `orders?select=id&email=eq.${encodeURIComponent(email)}` +
+        `&created_at=gte.${encodeURIComponent(since)}`,
+    );
+    if (recent && recent.length >= config.checkoutMaxPerWindow) {
+      return sendJson(res, 429, {
+        error: 'Too many checkout attempts. Please wait a few minutes and try again.',
+      });
+    }
+
     const products = await rest(
       `products?select=id,name,price,currency,file_path,is_active` +
         `&id=eq.${encodeURIComponent(productId)}&is_active=eq.true&limit=1`,

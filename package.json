@@ -19,7 +19,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "orders": "node scripts/orders.js",
+    "check:storage": "node scripts/check-storage.js",
+    "check:slipok": "node scripts/check-slipok.js",
+    "check:fulfilment": "node scripts/test-fulfilment.js",
+    "smoke": "node scripts/smoke-checkout.js"
   },
   "eslintConfig": {
     "extends": [

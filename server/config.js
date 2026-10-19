@@ -35,6 +35,19 @@ const config = {
   downloadLimit: Number(process.env.DOWNLOAD_LIMIT || 3),
   signedUrlTtl: Number(process.env.SIGNED_URL_TTL || 300), // seconds
   qrTtlMinutes: Number(process.env.QR_TTL_MINUTES || 15),
+
+  // How long after the QR countdown finishes we still accept a late slip.
+  // A buyer who already transferred the money must not be punished, so this is
+  // generous; beyond it the order is closed and they must contact the shop.
+  qrGraceMinutes: Number(process.env.QR_GRACE_MINUTES || 120),
+
+  // Abuse guards (each SlipOK check costs a credit, so cap retries per order).
+  maxVerifyAttempts: Number(process.env.MAX_VERIFY_ATTEMPTS || 12),
+  checkoutWindowMinutes: Number(process.env.CHECKOUT_WINDOW_MINUTES || 10),
+  checkoutMaxPerWindow: Number(process.env.CHECKOUT_MAX_PER_WINDOW || 5),
+
+  // Reject oversized uploads before spending a SlipOK credit (~4.5 MB Vercel cap).
+  maxSlipBytes: Number(process.env.MAX_SLIP_BYTES || 4000000),
 };
 
 module.exports = { config, required };
