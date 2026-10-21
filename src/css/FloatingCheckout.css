@@ -1,8 +1,8 @@
 /* Persistent shortcut to the checkout / QR screen. */
 .floating-checkout {
   position: fixed;
-  right: calc(16px + env(safe-area-inset-right, 0px));
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  right: calc(56px + env(safe-area-inset-right, 0px));
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
   z-index: 50;
   display: flex;
   align-items: center;
@@ -11,18 +11,19 @@
   height: 54px;
   padding: 0;
   border-radius: 999px;
-  background-color: var(--gold-color);
-  color: #171717;
+  background-color: #ffffff;
+  border: 1px solid rgba(145, 121, 61, 0.22);
+  color: var(--gold-color);
   text-decoration: none;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .floating-checkout:hover {
-  filter: brightness(1.08);
+  border-color: rgba(145, 121, 61, 0.38);
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 .floating-checkout:active {
@@ -30,7 +31,7 @@
 }
 
 .floating-checkout:focus-visible {
-  outline: 3px solid #ffffff;
+  outline: 3px solid var(--gold-color);
   outline-offset: 3px;
 }
 
@@ -48,7 +49,7 @@
   height: 11px;
   border-radius: 999px;
   background-color: #ef4444;
-  box-shadow: 0 0 0 2px var(--main-color);
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* “กลับไปหน้าจ่ายเงิน” tooltip on hover/focus. */
@@ -81,8 +82,8 @@
 
 @media (max-width: 640px) {
   .floating-checkout {
-    right: calc(14px + env(safe-area-inset-right, 0px));
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     width: 52px;
     height: 52px;
   }
