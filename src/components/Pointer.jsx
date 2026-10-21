@@ -53,6 +53,13 @@ function Pointer() {
       }
       setShrink(false);
 
+      // Keep the floating cart button unobstructed: the expanded difference
+      // cursor would otherwise cover its badge and recolour the whole button.
+      if (target instanceof Element && target.closest('.floating-checkout')) {
+        setExpanded(false);
+        return;
+      }
+
       const image = target instanceof Element ? target.closest(
           'img, a, button, .Navbar, .product-label, .price-label, .card-badge-status, .detail-more-btn, .product-contact-btns, .contact-btn, .profile-btn, .profile-links, .footer-nav, .footer-contact'
         ) //add more element here
