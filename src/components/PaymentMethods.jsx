@@ -10,6 +10,7 @@ import gsbLogo from "../images/banks/gsb.svg";
 import baacLogo from "../images/banks/baac.svg";
 import uobLogo from "../images/banks/uob.svg";
 import ttbLogo from "../images/banks/ttb.svg";
+import trueWalletLogo from "../images/banks/truewallet.png";
 
 // Banks whose slips SlipOK can verify. Logos are white glyphs drawn on each
 const supportedBanks = [
@@ -37,6 +38,12 @@ function PaymentMethods({ note = DEFAULT_NOTE }) {
             <img src={bank.src} alt={`${bank.alt} logo`} />
           </li>
         ))}
+        <li
+          className="payment-method-manual"
+          title="TrueMoney Wallet — contact the shop for manual payment"
+        >
+          <img src={trueWalletLogo} alt="TrueMoney Wallet logo" />
+        </li>
       </ul>
       {note && <p className="payment-method-note">{note}</p>}
     </div>
