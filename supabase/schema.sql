@@ -54,7 +54,7 @@ insert into products (id, name, price, currency, image_url, badge, short_detail,
 values (
   'prod1',
   'Movement System R6 V1',
-  199,
+  59,
   'THB',
   'REPLACE_WITH_STORAGE_PUBLIC_URL',
   'Sell',
