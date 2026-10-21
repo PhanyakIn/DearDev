@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchOrder, downloadUrl } from "../lib/checkout";
+import { fetchOrder, downloadUrl, readStoredCharge } from "../lib/checkout";
 import "../css/Success.css";
 
 function Success() {
@@ -70,6 +70,10 @@ function Success() {
   }
 
   const paid = order.status === "paid";
+  // The buyer may have paid but closed the site before uploading the slip.
+  // If the charge is still resumable, offer a direct way back to it.
+  const resumeCharge =
+    !paid && order.productId ? readStoredCharge(order.productId).charge : null;
 
   return (
     <div className="Success">
@@ -82,6 +86,19 @@ function Success() {
             Status: <strong>{order.status}</strong>
           </p>
           <p>If you have already paid but have not received your product, please contact the shop with your slip.</p>
+          {resumeCharge && (
+            <>
+              <Link
+                className="success-download"
+                to={`/checkout/${encodeURIComponent(order.productId)}`}
+              >
+                Back to payment / Upload slip
+              </Link>
+              <p className="success-hint">
+                Your QR may have expired, but you can still upload your slip for a while after paying.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="success-card">

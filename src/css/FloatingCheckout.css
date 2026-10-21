@@ -1,0 +1,96 @@
+/* Persistent shortcut to the checkout / QR screen. */
+.floating-checkout {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border-radius: 999px;
+  background-color: var(--gold-color);
+  color: #171717;
+  text-decoration: none;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-checkout:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.38);
+}
+
+.floating-checkout:active {
+  transform: translateY(0);
+}
+
+.floating-checkout:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.floating-checkout svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Small dot: there is a QR/order waiting to be finished. */
+.floating-checkout-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px var(--main-color);
+}
+
+/* “กลับไปหน้าจ่ายเงิน” tooltip on hover/focus. */
+.floating-checkout-tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  padding: 7px 12px;
+  border-radius: 999px;
+  background-color: var(--main-color);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--font-color);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+}
+
+.floating-checkout:hover .floating-checkout-tooltip,
+.floating-checkout:focus-visible .floating-checkout-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 640px) {
+  .floating-checkout {
+    right: calc(14px + env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-checkout,
+  .floating-checkout-tooltip {
+    transition-duration: 0.01ms;
+  }
+}

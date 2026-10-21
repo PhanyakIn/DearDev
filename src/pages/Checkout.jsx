@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { fetchProductById } from "../lib/shopApi";
-import { startCheckout, submitSlip, prepareSlipImage, rememberOrder } from "../lib/checkout";
+import { startCheckout, submitSlip, prepareSlipImage, rememberOrder, readStoredCharge, storeCharge, clearStoredCharge } from "../lib/checkout";
 import PaymentMethods from "../components/PaymentMethods";
 import PayHelp from "../components/PayHelp";
 import "../css/Checkout.css";
@@ -36,47 +36,9 @@ function isSlipFile(file) {
 }
 
 // The charge (order + QR image) only lives in React state, so a refresh would
-// silently drop the order and strand a buyer who already paid. Keep it in
-// sessionStorage so the QR screen survives a reload in the same tab.
-const CHARGE_STORAGE_KEY = "dearcheckout:charge";
-
-function readStoredCharge(productId) {
-  try {
-    const raw = window.sessionStorage.getItem(CHARGE_STORAGE_KEY);
-    if (!raw) return { charge: null, expired: false };
-    const saved = JSON.parse(raw);
-    if (!saved || saved.productId !== productId || !saved.charge) {
-      return { charge: null, expired: false };
-    }
-    const expiresAt = new Date(saved.charge.expiresAt).getTime();
-    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-      // Not removed here: the caller decides what to do (redirect + clear).
-      return { charge: null, expired: true };
-    }
-    return { charge: saved.charge, expired: false };
-  } catch {
-    return { charge: null, expired: false }; // corrupt JSON / blocked storage
-  }
-}
-
-function storeCharge(productId, charge) {
-  try {
-    window.sessionStorage.setItem(
-      CHARGE_STORAGE_KEY,
-      JSON.stringify({ productId, charge }),
-    );
-  } catch {
-    /* quota/private mode: keep working from memory only */
-  }
-}
-
-function clearStoredCharge() {
-  try {
-    window.sessionStorage.removeItem(CHARGE_STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
+// silently drop the order and strand a buyer who already paid. The helpers in
+// lib/checkout keep it in localStorage for the QR lifetime plus grace, so a
+// buyer can leave the site and come back to the same QR / slip upload.
 
 function Checkout() {
   const { id } = useParams();
@@ -98,8 +60,9 @@ function Checkout() {
     fetchProductById(id).then((p) => setProduct(p || null)).catch(() => {});
   }, [id]);
 
-  // Restore the charge for this product. An expired one must never render the
-  // QR screen again, so the buyer is sent back to the product page instead.
+  // Restore the charge for this product. Only redirect once the server's
+  // resume/grace window is over; an expired QR countdown is still usable for
+  // buyers who already transferred the money.
   useEffect(() => {
     const stored = readStoredCharge(id);
     if (stored.expired) {

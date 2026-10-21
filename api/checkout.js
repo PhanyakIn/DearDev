@@ -63,6 +63,12 @@ module.exports = async (req, res) => {
     }
 
     const expiresAt = new Date(Date.now() + config.qrTtlMinutes * 60 * 1000).toISOString();
+    // How long the buyer can come back and still upload a slip for this order.
+    // The client stores this so the floating checkout button knows when the
+    // order is too old to resume.
+    const resumeUntil = new Date(
+      new Date(expiresAt).getTime() + config.qrGraceMinutes * 60 * 1000,
+    ).toISOString();
 
     const rows = await rest('orders', {
       method: 'POST',
@@ -94,6 +100,7 @@ module.exports = async (req, res) => {
       currency: product.currency || 'THB',
       productName: product.name,
       expiresAt,
+      resumeUntil,
       downloadLimit: config.downloadLimit,
     });
   } catch (e) {

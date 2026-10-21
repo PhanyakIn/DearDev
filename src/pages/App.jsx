@@ -3,6 +3,7 @@ import React from 'react';
 import Pointer from '../components/Pointer';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer'
+import FloatingCheckout from '../components/FloatingCheckout';
 import Catalog from './Catalog';
 import News from './News';
 import Contact from './Contact';
@@ -32,6 +33,7 @@ function App() {
         </Routes>
         </main>
         <Pointer/>
+        <FloatingCheckout/>
         <Footer/>
     </div>
   );

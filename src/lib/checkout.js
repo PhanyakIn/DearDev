@@ -80,6 +80,109 @@ export function readLastOrder() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Active charge (order + QR) persistence
+//
+// The QR screen used to live only in sessionStorage, so closing the tab threw
+// the order away even though the customer may already have paid. We keep the
+// charge in localStorage for the QR lifetime plus the server grace window, so
+// the floating checkout button can bring the buyer back to upload a slip.
+// ---------------------------------------------------------------------------
+
+const CHARGE_STORAGE_KEY = 'dearcheckout:charge';
+const DEFAULT_RESUME_GRACE_MS = 120 * 60 * 1000; // QR_GRACE_MINUTES default
+
+function resumeUntilMs(charge) {
+  const explicit = charge && charge.resumeUntil ? new Date(charge.resumeUntil).getTime() : NaN;
+  if (Number.isFinite(explicit)) return explicit;
+  const expires = charge && charge.expiresAt ? new Date(charge.expiresAt).getTime() : NaN;
+  return Number.isFinite(expires) ? expires + DEFAULT_RESUME_GRACE_MS : NaN;
+}
+
+function loadStoredCharge() {
+  try {
+    const raw = window.localStorage.getItem(CHARGE_STORAGE_KEY);
+    if (!raw) return { saved: null, expired: false };
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.productId || !saved.charge) {
+      return { saved: null, expired: false };
+    }
+    const until = resumeUntilMs(saved.charge);
+    return { saved, expired: !Number.isFinite(until) || until <= Date.now() };
+  } catch {
+    return { saved: null, expired: false }; // corrupt JSON / blocked storage
+  }
+}
+
+// Returns { charge, expired } for a product. `expired` only becomes true once
+// the server grace window is over; an expired QR countdown is still usable.
+export function readStoredCharge(productId) {
+  const { saved, expired } = loadStoredCharge();
+  if (!saved) return { charge: null, expired };
+  if (productId && saved.productId !== productId) {
+    return { charge: null, expired: false };
+  }
+  if (expired) {
+    clearStoredCharge();
+    return { charge: null, expired: true };
+  }
+  return { charge: saved.charge, expired: false };
+}
+
+export function readActiveCharge() {
+  const { saved, expired } = loadStoredCharge();
+  if (!saved) return null;
+  if (expired) {
+    clearStoredCharge();
+    return null;
+  }
+  return { productId: saved.productId, charge: saved.charge };
+}
+
+export function storeCharge(productId, charge) {
+  if (!productId || !charge) return;
+  const until = resumeUntilMs(charge);
+  const savedCharge =
+    Number.isFinite(until) && !charge.resumeUntil
+      ? { ...charge, resumeUntil: new Date(until).toISOString() }
+      : charge;
+  try {
+    window.localStorage.setItem(
+      CHARGE_STORAGE_KEY,
+      JSON.stringify({ productId, charge: savedCharge, savedAt: Date.now() }),
+    );
+  } catch {
+    /* quota/private mode: keep working from memory only */
+  }
+}
+
+export function clearStoredCharge() {
+  try {
+    window.localStorage.removeItem(CHARGE_STORAGE_KEY);
+    window.sessionStorage.removeItem(CHARGE_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+// Where the floating checkout button should take the buyer:
+//   1. back to the QR/slip screen while the order is still resumable
+//   2. to the most recent order (success/download page)
+//   3. otherwise to the catalog
+export function getCheckoutResumeTarget() {
+  const active = readActiveCharge();
+  if (active) return { type: 'checkout', productId: active.productId };
+  const last = readLastOrder();
+  if (last) {
+    return {
+      type: 'order',
+      orderId: last.orderId,
+      accessToken: last.accessToken,
+    };
+  }
+  return { type: 'catalog' };
+}
+
 // Read a File/Blob as a base64 string (no data: prefix).
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
