@@ -97,8 +97,10 @@ green "✓ Project linked"
 
 # ------------------------------------------------------------- read values
 read_env() {
-  # last matching line wins; everything after the first '=' is the value
-  grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- || true
+  # last matching line wins; everything after the first '=' is the value.
+  # Whitespace around the value is trimmed — a stray space would be pushed to
+  # Vercel verbatim and break the links the app builds from SITE_URL.
+  grep -E "^$1=" "$ENV_FILE" | tail -1 | cut -d= -f2- | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' || true
 }
 
 declare -a MISSING=()
@@ -167,6 +169,9 @@ for key in "${KEYS[@]}"; do
   for secret in "${SECRET_KEYS[@]}"; do
     [[ "$key" == "$secret" ]] && flags+=(--sensitive)
   done
+  # REACT_APP_* values are baked into the public browser bundle on purpose.
+  # Vercel CLI 65+ refuses to add such a name without an explicit type.
+  [[ "$key" == REACT_APP_* ]] && flags+=(--type config)
 
   if printf '%s' "$value" | npx --yes vercel@latest env add "$key" "${flags[@]}" >/dev/null 2>&1; then
     green "✓ $key"

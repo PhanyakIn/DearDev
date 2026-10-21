@@ -19,6 +19,7 @@ const { evaluateSlip } = require('../server/payments/rules');
 const { generateLicenseKey } = require('../server/license');
 const { sendDownloadEmail, isEmailConfigured } = require('../server/email');
 const { orderToken, tokenMatches } = require('../server/orderToken');
+const { checkRateLimit, clientIp } = require('../server/rateLimit');
 const promptpay = require('../server/payments/promptpay');
 
 const ORDER_COLUMNS =
@@ -228,6 +229,30 @@ module.exports = async (req, res) => {
         message:
           'This payment window has closed. If you have already paid, please contact the shop with your slip.',
       });
+    }
+
+    // Per-IP guard. Every verification that reaches SlipOK costs a credit, so
+    // cap how many verifications one network can start inside the window.
+    // This runs before the attempt is reserved: a blocked request must not
+    // consume an attempt or spend a credit.
+    const ip = clientIp(req);
+    if (ip) {
+      const verdict = await checkRateLimit({
+        bucket: 'verify-slip',
+        ip,
+        limit: config.verifyMaxPerIp,
+        windowSeconds: config.rateLimitWindowSeconds,
+      });
+      if (!verdict.allowed) {
+        return sendJson(res, 429, {
+          status: 'pending',
+          code: 1029,
+          message:
+            'Too many verification attempts from this network. Please wait a few minutes and try again.',
+          retryable: true,
+          retryAfterSeconds: verdict.retryAfterSeconds,
+        });
+      }
     }
 
     // Reserve the attempt before spending a SlipOK credit. The PATCH is a

@@ -6,7 +6,7 @@
 //      ONE WEEK of inactivity — a paused project means every customer sees
 //      errors until it is restored by hand. A daily cron hit avoids that.
 
-const { rest } = require('../server/supabase');
+const { rest, rpc } = require('../server/supabase');
 const { sendJson } = require('../server/http');
 
 module.exports = async (req, res) => {
@@ -34,5 +34,15 @@ module.exports = async (req, res) => {
       db: 'down',
       time: new Date().toISOString(),
     });
+    return;
+  }
+
+  // Housekeeping for the per-IP rate-limit counters (this route runs daily).
+  // A failure here must not affect the health verdict.
+  try {
+    await rpc('purge_rate_limits', {});
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('health: could not purge rate limits:', e.message);
   }
 };

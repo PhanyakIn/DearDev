@@ -5,6 +5,7 @@ const { rest } = require('../server/supabase');
 const { readJsonBody, sendJson, sendServerError } = require('../server/http');
 const { config } = require('../server/config');
 const { orderToken } = require('../server/orderToken');
+const { checkRateLimit, clientIp } = require('../server/rateLimit');
 const promptpay = require('../server/payments/promptpay');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -60,6 +61,27 @@ module.exports = async (req, res) => {
     const amountSatang = Math.round(Number(product.price) * 100);
     if (!Number.isFinite(amountSatang) || amountSatang <= 0) {
       return sendJson(res, 500, { error: 'Invalid product price' });
+    }
+
+    // Per-IP guard. The per-email window above is trivial to bypass with a
+    // fresh email, so cap how many orders one network can start. This runs
+    // only for well-formed checkouts, so a burst of junk requests does not
+    // burn a real customer's budget.
+    const ip = clientIp(req);
+    if (ip) {
+      const verdict = await checkRateLimit({
+        bucket: 'checkout',
+        ip,
+        limit: config.checkoutMaxPerIp,
+        windowSeconds: config.rateLimitWindowSeconds,
+      });
+      if (!verdict.allowed) {
+        return sendJson(res, 429, {
+          error:
+            'Too many checkout attempts from this network. Please wait a few minutes and try again.',
+          retryAfterSeconds: verdict.retryAfterSeconds,
+        });
+      }
     }
 
     const expiresAt = new Date(Date.now() + config.qrTtlMinutes * 60 * 1000).toISOString();

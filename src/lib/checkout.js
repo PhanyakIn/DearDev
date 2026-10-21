@@ -80,6 +80,32 @@ export function readLastOrder() {
   }
 }
 
+// The status of the remembered order (pending | paid | ...). It lives on the
+// server, so it has to be asked for — the token is required. The answer is
+// cached briefly so the floating button does not ask on every navigation.
+const STATUS_CACHE_TTL_MS = 30 * 1000;
+const statusCache = new Map();
+
+export async function fetchRememberedOrderStatus() {
+  const last = readLastOrder();
+  if (!last) return null;
+
+  const cached = statusCache.get(last.orderId);
+  if (cached && Date.now() - cached.at < STATUS_CACHE_TTL_MS) return cached.status;
+
+  let status = null;
+  try {
+    const order = await fetchOrder(last.orderId, last.accessToken);
+    status = order && order.status ? order.status : null;
+  } catch {
+    // Expired link, offline or the order was pruned — treat it as "nothing
+    // pending" instead of showing a badge that leads nowhere.
+    status = null;
+  }
+  statusCache.set(last.orderId, { status, at: Date.now() });
+  return status;
+}
+
 // ---------------------------------------------------------------------------
 // Active charge (order + QR) persistence
 //

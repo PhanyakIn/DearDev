@@ -24,10 +24,15 @@ npm start
 | คำสั่ง | ใช้ทำอะไร |
 |---|---|
 | `npm start` | รัน dev mode |
+| `npm run dev:stop` | ปิด dev server ที่ค้างอยู่ (port 3000/3001/3002) — แก้ "Something is already running on port …" |
+| `npm run dev:stop -- 3001` | ปิดเฉพาะ port ที่ระบุ · `npm run dev:stop:all` = ปิดทุก instance |
 | `npm run build` | build ลง `build/` (ไฟล์นี้ไม่ขึ้น GitHub) |
 | `npm test` | รัน test |
 | `npm run check:storage` | ตรวจ bucket private + `file_path` + signed URL ก่อนเปิดขาย |
 | `npm run check:slipok` | ตรวจ branch/API key + โควต้าคงเหลือ — ใส่ `-- --slip slip.jpg` เพื่อทดสอบสลิปจริง 1 ใบ |
+| `npm run check:hardening` | ยืนยันว่า rate limit + การซ่อน `file_path` ถูกตั้งใน Supabase แล้ว |
+| `npm run check:sql` | ตรวจ syntax/พฤติกรรมของ SQL บน Postgres จริง (PGlite) ก่อน paste — ครั้งแรกต้อง `npm i --no-save @electric-sql/pglite` |
+| `npm run test:ratelimit` | ทดสอบ rate limit (ไม่แตะฐานข้อมูล ไม่ใช้โควต้า SlipOK) |
 | `npm run check:fulfilment` | พิสูจน์ว่า paid order โหลดได้จริง + cap 3 ครั้งบังคับใช้ (ไม่ใช้เงิน) |
 | `npm run smoke` | ทดสอบ pipeline ทั้งเส้น (สร้าง QR + ออเดอร์ แล้วลบทิ้ง) — ใส่ `-- --qr` เพื่อเซฟรูป QR ไว้สแกน |
 | `bash scripts/push-env-vercel.sh` | ดัน env จาก `.env.local` ขึ้น Vercel (Production + Preview) — ไม่พิมพ์ค่าให้เห็น |
@@ -76,6 +81,26 @@ public/         # index.html, manifest, icons
 | `GET /api/order?orderId=&token=` | สถานะออเดอร์สำหรับหน้า success |
 | `GET /api/download?orderId=&token=` | signed URL อายุสั้น + จำกัด 3 ครั้ง |
 
+**ปุ่มลอย "กลับไปหน้าจ่ายเงิน"**
+- อยู่มุมขวาล่างทุกหน้า (ยกเว้น `/checkout/*` และ `/success`) — พาไป QR/slip ที่ค้างไว้
+- จำออเดอร์ไว้ใน `localStorage` (`dearcheckout:charge` + `dearcheckout:last-order`) เพื่อกลับมาแนบสลิปได้แม้ปิดเบราว์เซอร์
+- badge แดง = ยังมีรายการค้าง (ทั้ง QR ที่ยังใช้ได้ และออเดอร์ที่ยัง `pending` — สถานะถามจากเซิร์ฟเวอร์)
+- กด "← Back to product" **ไม่ลบ** ออเดอร์ที่จำไว้ (ต้องการให้กลับมาแนบสลิปได้) — ถ้าอยากเริ่มออเดอร์ใหม่ให้กด "Start a new checkout" ในหน้าที่ QR หมดอายุ
+- หน้า `/success` ของออเดอร์ที่ยังไม่จ่าย จะมีลิงก์ "Back to payment / Upload slip" ถ้ายังมี charge ที่ resume ได้
+
+**Dev mock (`src/setupProxy.js` — ใช้เฉพาะ `npm start`)**
+- จำลองสัญญาเดียวกับของจริง (`productId`, `expiresAt`, `resumeUntil`, `downloadLimit`)
+- สถานะออเดอร์จำลอง: เริ่มต้น `paid` → สร้าง checkout ใหม่ = `pending` → ยืนยันสลิปสำเร็จ = `paid` อีกครั้ง
+- ดูสถานะ "ยังไม่จ่าย" บนหน้า success: `/success?orderId=demo-order&token=dev-token&status=pending`
+- หมายเหตุ: แก้ `setupProxy.js` แล้วต้อง **รีสตาร์ท dev server** (CRA ไม่ reload ไฟล์นี้)
+- เช็คว่า mock ตอบครบสัญญา (ตัด `qr` ออก เพราะเป็น base64 ยาว ~3 KB):
+  ```bash
+  curl -s -X POST http://localhost:3000/api/checkout \
+    -H 'Content-Type: application/json' \
+    -d '{"productId":"prod1","email":"test@example.com"}' | jq 'del(.qr)'
+  # ต้องเห็น productId + expiresAt + resumeUntil
+  ```
+
 **ต้องตั้งค่าก่อนใช้จริง**
 1. รัน SQL ใน `supabase/schema.sql` (ทุก statement เป็น idempotent → รันซ้ำได้)
 2. สร้าง Storage bucket **private** ชื่อ `digital-products` แล้วอัปไฟล์ `.zip` เข้าไป
@@ -122,6 +147,9 @@ public/         # index.html, manifest, icons
 | `QR_GRACE_MINUTES` | server | ยังรับสลิปหลัง QR หมดอายุ (default 120) |
 | `MAX_VERIFY_ATTEMPTS` | server | จำนวนครั้งตรวจสลิปต่อออเดอร์ (default 12) |
 | `CHECKOUT_MAX_PER_WINDOW` | server | จำนวนออเดอร์สูงสุดต่ออีเมลใน `CHECKOUT_WINDOW_MINUTES` |
+| `CHECKOUT_MAX_PER_IP` | server | จำนวนออเดอร์สูงสุดต่อ IP ใน `RATE_LIMIT_WINDOW_SECONDS` (default 10) |
+| `VERIFY_MAX_PER_IP` | server | จำนวนครั้งตรวจสลิปสูงสุดต่อ IP ในหน้าต่างเดียวกัน (default 6) — แต่ละครั้งที่ผ่าน = เผา 1 โควต้า SlipOK |
+| `RATE_LIMIT_WINDOW_SECONDS` | server | ความยาวหน้าต่างของ rate limit (default 600 วินาที) |
 | `SLIP_CLOCK_SKEW_MINUTES` | server | เผื่อเวลา clock skew ตอนเทียบเวลาสลิป (default 5) |
 | `SLIPOK_LOG` | server | `false` = ไม่เก็บ log/PII ฝั่ง SlipOK (default) |
 | `ALLOW_SLIP_DATA` | server | `1` = อนุญาต `data`/`url` (สำหรับ dev); production รับเฉพาะรูปที่อัปโหลด |
@@ -137,6 +165,26 @@ public/         # index.html, manifest, icons
 - สลิปผิดลองใหม่ได้จนครบ `MAX_VERIFY_ATTEMPTS` แล้วออเดอร์ถูกปิดเป็น `rejected`
 - ออเดอร์ที่เลยกำหนดจะถูกปิดเป็น `expired` เมื่อมีการตรวจสลิปหลัง grace หรือรัน `orders expire`
 - ไม่เก็บ log/PII ฝั่ง SlipOK (`SLIPOK_LOG=false`) และ production รับเฉพาะรูปสลิปที่อัปโหลด
+- จำกัดอัตราต่อ IP ที่ `/api/checkout` และ `/api/verify-slip` (นับใน Postgres — ทุก instance ของ Vercel ใช้ตัวนับเดียวกัน) → กันการเผาโควต้า SlipOK และกันสแปมออเดอร์
+- คำขอที่โดน rate limit จะถูกบล็อก **ก่อน** มีการกินโควต้า SlipOK และก่อนข้าม attempt counter
+- มี `Content-Security-Policy` (script-src 'self') → สคริปต์แปลกปลอมขโมย token ใน localStorage ไม่ได้
+- `products.file_path` (ชื่อไฟล์ใน bucket private) อ่านด้วย anon key ไม่ได้ — RLS เป็นระดับแถว ไม่ใช่ระดับคอลัมน์ จึงต้อง grant รายคอลัมน์
+- หมายเหตุเรื่อง CGNAT: ผู้ใช้มือถือหลายคนอาจออกไป IP เดียวกัน ถ้าลูกค้าจริงโดนบล็อก ให้เพิ่ม `CHECKOUT_MAX_PER_IP` / `VERIFY_MAX_PER_IP` (ค่า `0` = ปิดการจำกัด)
+
+**อัปเกรดโปรเจกต์เดิม (ยังไม่ได้รัน SQL ส่วนนี้)**
+
+โปรเจกต์ที่เปิดใช้งานอยู่แล้วต้อง paste ไฟล์เดียวนี้ **ครั้งเดียว** ใน Supabase SQL Editor
+(ไฟล์นี้ปลอดภัยกับข้อมูลเดิม — ไม่แตะแถวสินค้า/ราคา/รูป):
+
+```bash
+# Supabase Dashboard → SQL Editor → New query → วางเนื้อหา supabase/hardening.sql → Run
+npm run check:hardening   # ยืนยันว่าตั้งค่าแล้ว
+```
+
+| ไฟล์ | ทำอะไร |
+|---|---|
+| `supabase/hardening.sql` | สร้างตาราง `rate_limits` + ฟังก์ชัน `check_rate_limit()` และ revoke `products.file_path` จาก anon |
+| `supabase/schema.sql` | ไฟล์เดียวกันสำหรับติดตั้งใหม่ (มี seed ที่ไม่ทับข้อมูลจริงแล้ว) |
 
 **จัดการออเดอร์ (ทางออกฉุกเฉิน)**
 

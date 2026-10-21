@@ -53,6 +53,7 @@ function Checkout() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const expiredStored = useRef(false);
+  const fileInputRef = useRef(null);
 
   const secondsLeft = useCountdown(charge?.expiresAt);
   const qrExpired =
@@ -117,6 +118,18 @@ function Checkout() {
     } finally {
       setBusy(false);
     }
+  };
+
+  // The QR is gone for good, so drop the stored order and let the buyer
+  // generate a fresh one. Leaving via "Back to product" keeps the charge so
+  // the floating checkout button can still resume it.
+  const startNewCheckout = () => {
+    clearStoredCharge();
+    setCharge(null);
+    setSlipFile(null);
+    setSlipInfo("");
+    setError("");
+    setNotice("");
   };
 
   const chooseSlip = (file) => {
@@ -238,8 +251,11 @@ function Checkout() {
               <p className="checkout-expired-title">QR code expired</p>
               <p className="checkout-expired-text">
                 This QR is no longer valid. If you already paid, upload your slip below.
-                Otherwise go back and start a new checkout.
+                Otherwise start a new checkout.
               </p>
+              <button type="button" className="checkout-new-button" onClick={startNewCheckout}>
+                Start a new checkout
+              </button>
             </div>
           ) : (
             <>
@@ -282,10 +298,23 @@ function Checkout() {
                 Drag &amp; drop your slip here, or choose a file below
               </p>
               <input
+                ref={fileInputRef}
+                className="checkout-file-input"
                 type="file"
                 accept={SLIP_ACCEPT}
-                onChange={(e) => chooseSlip(e.target.files?.[0])}
+                onChange={(e) => {
+                  chooseSlip(e.target.files?.[0]);
+                  // Reset so picking the same file again still fires onChange.
+                  e.target.value = "";
+                }}
               />
+              <button
+                type="button"
+                className="checkout-file-button"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {slipFile ? slipFile.name : "Choose file"}
+              </button>
             </div>
             {slipFile && <p className="checkout-hint">Selected: {slipFile.name}</p>}
             <p className="checkout-hint">
@@ -305,9 +334,10 @@ function Checkout() {
       )}
 
       <p className="checkout-back">
-        <Link to={`/product/${id}`} onClick={clearStoredCharge}>
-          ← Back to product
-        </Link>
+        {/* Going back must NOT clear the stored charge: the floating checkout
+            button uses it to bring the buyer back to this same QR / slip
+            upload. Use “Start a new checkout” when a fresh order is wanted. */}
+        <Link to={`/product/${id}`}>← Back to product</Link>
       </p>
     </div>
   );

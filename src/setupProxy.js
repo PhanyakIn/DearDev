@@ -27,10 +27,14 @@ const SLIPOK_READY = Boolean(config.slipokApiKey && config.slipokBranchId);
 // production /api/checkout uses). Falls back to a fake number when unset.
 const ENV_PROXY = (process.env.PROMPTPAY_PROXY || "").trim();
 const DEMO_PROXY = ENV_PROXY || "0812345678";
-const DEMO_AMOUNT_SATANG = 19900;
+const DEMO_AMOUNT_SATANG = 5900;
 const DEMO_DOWNLOAD_LIMIT = 3;
 // In-memory counter so the dev Success page shows a real, shrinking quota.
 let demoDownloadCount = 0;
+// Demo order state. Starts as "paid" so /success?orderId=demo shows the paid
+// view right away; a new checkout makes it pending again (and a successful
+// slip verification flips it back to paid).
+let demoPaid = true;
 const DEMO_SLIP_PATH = path.join(__dirname, "..", "scripts", "assets", "demo-slip.png");
 
 function maskProxy(proxy) {
@@ -95,15 +99,26 @@ module.exports = function (app) {
         width: 320,
       });
       demoDownloadCount = 0; // a new order starts with a fresh quota
+      demoPaid = false; // a new order has not been paid yet
+      // Mirror the real /api/checkout contract: the client stores these to
+      // know how long the charge can still be resumed.
+      const expiresAt = new Date(
+        Date.now() + config.qrTtlMinutes * 60 * 1000,
+      ).toISOString();
+      const resumeUntil = new Date(
+        new Date(expiresAt).getTime() + config.qrGraceMinutes * 60 * 1000,
+      ).toISOString();
       res.json({
         orderId: "demo-order",
         accessToken: "dev-token",
+        productId: "prod1",
         qr,
         amount: DEMO_AMOUNT_SATANG,
         amountTHB: DEMO_AMOUNT_SATANG / 100,
         currency: "THB",
         productName: "Movement System R6 V1",
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+        expiresAt,
+        resumeUntil,
         downloadLimit: DEMO_DOWNLOAD_LIMIT,
       });
     } catch (e) {
@@ -131,6 +146,7 @@ module.exports = function (app) {
 
         if (result.ok) {
           demoDownloadCount = 0;
+          demoPaid = true;
           res.json({
             status: "paid",
             licenseKey: "DEAR-7K3M-QX9P-B4NT",
@@ -167,6 +183,7 @@ module.exports = function (app) {
         });
         return;
       }
+      demoPaid = true;
       res.json({
         status: "paid",
         licenseKey: "DEAR-7K3M-QX9P-B4NT",
@@ -193,18 +210,22 @@ module.exports = function (app) {
   });
 
   app.get("/api/order", (req, res) => {
+    // ?status=pending previews the "not paid yet" state (the success page
+    // then shows the "Back to payment / Upload slip" link).
+    const pending = req.query.status === "pending" || !demoPaid;
     res.json({
       orderId: "demo-order",
-      status: "paid",
+      status: pending ? "pending" : "paid",
+      productId: "prod1",
       productName: "Movement System R6 V1",
-      amount: 19900,
+      amount: DEMO_AMOUNT_SATANG,
       currency: "THB",
       email: "de***@example.com",
-      licenseKey: "DEAR-7K3M-QX9P-B4NT",
+      licenseKey: pending ? null : "DEAR-7K3M-QX9P-B4NT",
       downloadCount: demoDownloadCount,
       downloadLimit: DEMO_DOWNLOAD_LIMIT,
-      remaining: Math.max(DEMO_DOWNLOAD_LIMIT - demoDownloadCount, 0),
-      paidAt: new Date().toISOString(),
+      remaining: pending ? 0 : Math.max(DEMO_DOWNLOAD_LIMIT - demoDownloadCount, 0),
+      paidAt: pending ? null : new Date().toISOString(),
       createdAt: new Date().toISOString(),
     });
   });

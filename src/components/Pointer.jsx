@@ -22,6 +22,7 @@ function Pointer() {
     document.body.classList.add('custom-pointer-active');
 
     const VIDEO_SELECTOR = 'iframe, video, .pv-wrap';
+    const FLOATING_SELECTOR = '.floating-checkout';
 
     const setShrink = (value) => {
       if (shrinkingRef.current !== value) {
@@ -46,19 +47,37 @@ function Pointer() {
       target instanceof Element ? Boolean(target.closest(VIDEO_SELECTOR)) : false
     );
 
+    // The floating checkout button lives in the bottom-right corner, so a link
+    // right next to it is easy to hover. The difference-blended cursor would
+    // then paint over the button and its badge. Hide the custom cursor while
+    // the pointer is close (the native cursor stays visible).
+    const pointNearFloatingCheckout = (x, y, pad = 48) => {
+      const els = document.querySelectorAll(FLOATING_SELECTOR);
+      for (let i = 0; i < els.length; i += 1) {
+        const rect = els[i].getBoundingClientRect();
+        if (x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const applyHoverState = (x, y, target) => {
       if (targetInVideo(target) || pointInVideo(x, y)) {
         setShrink(true);
         return;
       }
-      setShrink(false);
 
-      // Keep the floating cart button unobstructed: the expanded difference
-      // cursor would otherwise cover its badge and recolour the whole button.
-      if (target instanceof Element && target.closest('.floating-checkout')) {
-        setExpanded(false);
+      // Keep the floating checkout button fully visible.
+      if (
+        pointNearFloatingCheckout(x, y) ||
+        (target instanceof Element && target.closest(FLOATING_SELECTOR))
+      ) {
+        setShrink(true);
         return;
       }
+
+      setShrink(false);
 
       const image = target instanceof Element ? target.closest(
           'img, a, button, .Navbar, .product-label, .price-label, .card-badge-status, .detail-more-btn, .product-contact-btns, .contact-btn, .profile-btn, .profile-links, .footer-nav, .footer-contact'
@@ -162,7 +181,10 @@ function Pointer() {
 
       frameCount.current += 1;
       if (frameCount.current % 6 === 0 && hasMoved.current) {
-        if (pointInVideo(mouse.current.x, mouse.current.y)) {
+        if (
+          pointInVideo(mouse.current.x, mouse.current.y) ||
+          pointNearFloatingCheckout(mouse.current.x, mouse.current.y)
+        ) {
           setShrink(true);
         }
       }

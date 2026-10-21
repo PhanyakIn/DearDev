@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { getCheckoutResumeTarget } from "../lib/checkout";
+import { getCheckoutResumeTarget, fetchRememberedOrderStatus } from "../lib/checkout";
 import "../css/FloatingCheckout.css";
 
 // A persistent shortcut back to the buyer's active QR/slip screen. It is
@@ -8,15 +8,35 @@ import "../css/FloatingCheckout.css";
 function FloatingCheckout() {
   const location = useLocation();
   const [target, setTarget] = useState(() => getCheckoutResumeTarget());
+  // Bumped on every refresh so the order status below is re-checked.
+  const [tick, setTick] = useState(0);
+  const [orderPending, setOrderPending] = useState(false);
 
   const refresh = useCallback(() => {
     setTarget(getCheckoutResumeTarget());
+    setTick((value) => value + 1);
   }, []);
 
   // Re-read after navigation or when another tab/checkout updates storage.
   useEffect(() => {
     refresh();
   }, [location.pathname, refresh]);
+
+  // The remembered order may still be waiting for payment — the badge has to
+  // show that too, not only for an active QR.
+  useEffect(() => {
+    let cancelled = false;
+    if (target.type !== "order") {
+      setOrderPending(false);
+      return undefined;
+    }
+    fetchRememberedOrderStatus().then((status) => {
+      if (!cancelled) setOrderPending(status === "pending");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [target.type, target.orderId, tick]);
 
   useEffect(() => {
     const onStorage = (event) => {
@@ -49,8 +69,8 @@ function FloatingCheckout() {
       `&token=${encodeURIComponent(target.accessToken)}`;
   }
 
-  const hasActiveCharge = target.type === "checkout";
-  const label = hasActiveCharge
+  const hasPending = target.type === "checkout" || orderPending;
+  const label = hasPending
     ? "กลับไปหน้าจ่ายเงิน (มีรายการที่ยังไม่เสร็จ)"
     : "กลับไปหน้าจ่ายเงิน";
 
@@ -60,7 +80,7 @@ function FloatingCheckout() {
       className="floating-checkout"
       aria-label={label}
     >
-      {hasActiveCharge && (
+      {hasPending && (
         <span className="floating-checkout-badge" aria-hidden="true" />
       )}
       <span className="floating-checkout-tooltip" aria-hidden="true">

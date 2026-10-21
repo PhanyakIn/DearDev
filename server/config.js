@@ -52,6 +52,14 @@ const config = {
   checkoutWindowMinutes: Number(process.env.CHECKOUT_WINDOW_MINUTES || 10),
   checkoutMaxPerWindow: Number(process.env.CHECKOUT_MAX_PER_WINDOW || 5),
 
+  // Per-IP abuse guards. The per-email limit above is easy to bypass with a
+  // throwaway email, so the expensive parts are also capped per IP. The
+  // counter lives in Postgres (see supabase/schema.sql) and is shared by
+  // every serverless instance.
+  rateLimitWindowSeconds: Number(process.env.RATE_LIMIT_WINDOW_SECONDS || 600),
+  checkoutMaxPerIp: Number(process.env.CHECKOUT_MAX_PER_IP || 10),
+  verifyMaxPerIp: Number(process.env.VERIFY_MAX_PER_IP || 6),
+
   // Reject oversized uploads before spending a SlipOK credit (~4.5 MB Vercel cap).
   maxSlipBytes: Number(process.env.MAX_SLIP_BYTES || 4000000),
 

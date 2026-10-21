@@ -203,6 +203,8 @@ open_url "https://supabase.com/dashboard"
 step "Left menu SQL Editor → New query."
 step "Open supabase/schema.sql from this repo, copy everything, paste, run it."
 step "Run it AGAIN later whenever schema.sql changes — every statement is idempotent."
+note "Shop already live? Paste supabase/hardening.sql instead — it only adds the rate-limit"
+note "counter and the column grants, and never touches your product rows."
 pause "Press Enter after it reports Success"
 
 stage "3/8 Private bucket for the .zip files"
