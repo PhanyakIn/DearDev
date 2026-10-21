@@ -55,6 +55,9 @@ function Checkout() {
   const expiredStored = useRef(false);
 
   const secondsLeft = useCountdown(charge?.expiresAt);
+  const qrExpired =
+    Boolean(charge?.expiresAt) &&
+    (secondsLeft === 0 || new Date(charge.expiresAt).getTime() <= Date.now());
 
   useEffect(() => {
     fetchProductById(id).then((p) => setProduct(p || null)).catch(() => {});
@@ -229,18 +232,27 @@ function Checkout() {
         </form>
       ) : (
         <div className="checkout-card">
-          <p className="checkout-step">Scan and pay with your banking app</p>
-          <img className="checkout-qr" src={charge.qr} alt="PromptPay QR" />
-          <p className="checkout-amount">{formatTHB(charge.amount)} {charge.currency}</p>
-          {secondsLeft != null && (
-            <p className={`checkout-timer${secondsLeft === 0 ? " expired" : ""}`}>
-              {secondsLeft > 0
-                ? `QR expires in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`
-                : "QR expired — if you already paid, upload your slip below; otherwise go back and start a new checkout"}
-            </p>
+          {qrExpired ? (
+            <div className="checkout-expired" role="status">
+              <span className="checkout-expired-face" aria-hidden="true">:(</span>
+              <p className="checkout-expired-title">QR code expired</p>
+              <p className="checkout-expired-text">
+                This QR is no longer valid. If you already paid, upload your slip below.
+                Otherwise go back and start a new checkout.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="checkout-step">Scan and pay with your banking app</p>
+              <img className="checkout-qr" src={charge.qr} alt="PromptPay QR" />
+              <p className="checkout-amount">{formatTHB(charge.amount)} {charge.currency}</p>
+              {secondsLeft != null && secondsLeft > 0 && (
+                <p className="checkout-timer">
+                  QR expires in {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")}
+                </p>
+              )}
+            </>
           )}
-
-          <PayHelp />
 
           <hr />
           <p className="checkout-step">Already paid? Upload your slip to get your product instantly</p>
@@ -287,6 +299,8 @@ function Checkout() {
           </form>
           {error && <p className="checkout-error">{error}</p>}
           {notice && <p className="checkout-notice">{notice}</p>}
+
+          <PayHelp />
         </div>
       )}
 

@@ -161,9 +161,37 @@
   color: #ff6b6b;
 }
 
-.checkout-timer.expired {
-  color: #ff6b6b;
-  opacity: 1;
+.checkout-expired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 12px 8px;
+  text-align: center;
+}
+
+.checkout-expired-face {
+  display: block;
+  color: var(--gold-color);
+  font-size: clamp(64px, 13vw, 96px);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.checkout-expired-title {
+  margin: 0;
+  color: var(--font-color);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.checkout-expired-text {
+  max-width: 520px;
+  margin: 0;
+  color: var(--font-color);
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: 0.72;
 }
 
 .checkout-error {
