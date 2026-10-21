@@ -25,20 +25,59 @@ export function startCheckout(productId, email) {
   });
 }
 
-export function submitSlip(orderId, slip) {
+export function submitSlip(orderId, accessToken, slip) {
   return request('/api/verify-slip', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderId, slip }),
+    body: JSON.stringify({ orderId, token: accessToken, slip }),
   });
 }
 
-export function fetchOrder(orderId) {
-  return request(`/api/order?orderId=${encodeURIComponent(orderId)}`);
+export function fetchOrder(orderId, accessToken) {
+  return request(
+    `/api/order?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(accessToken)}`,
+  );
 }
 
-export function downloadUrl(orderId) {
-  return `/api/download?orderId=${encodeURIComponent(orderId)}`;
+export function downloadUrl(orderId, accessToken) {
+  return (
+    `/api/download?orderId=${encodeURIComponent(orderId)}` +
+    `&token=${encodeURIComponent(accessToken)}`
+  );
+}
+
+// Keep a pointer to the last order in this browser. Email delivery is optional
+// (and may be disabled), so this is the safety net for a buyer who loses the
+// success page. The token is still required; this is not a password recovery.
+const LAST_ORDER_KEY = 'dearcheckout:last-order';
+const LAST_ORDER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function rememberOrder({ orderId, accessToken, productId }) {
+  if (!orderId || !accessToken) return;
+  try {
+    window.localStorage.setItem(
+      LAST_ORDER_KEY,
+      JSON.stringify({ orderId, accessToken, productId, savedAt: Date.now() }),
+    );
+  } catch {
+    /* private mode / storage full: the success page still works right now */
+  }
+}
+
+export function readLastOrder() {
+  try {
+    const raw = window.localStorage.getItem(LAST_ORDER_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.orderId || !saved.accessToken) return null;
+    if (!Number.isFinite(saved.savedAt) || Date.now() - saved.savedAt > LAST_ORDER_TTL_MS) {
+      window.localStorage.removeItem(LAST_ORDER_KEY);
+      return null;
+    }
+    return saved;
+  } catch {
+    return null;
+  }
 }
 
 // Read a File/Blob as a base64 string (no data: prefix).

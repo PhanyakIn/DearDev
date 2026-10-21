@@ -11,6 +11,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Product1 from './Product1';
 import Checkout from './Checkout';
 import Success from './Success';
+import Recover from './Recover';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/product/:id" element={<Product1 />} />
           <Route path="/checkout/:id" element={<Checkout />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/recover" element={<Recover />} />
         </Routes>
         </main>
         <Pointer/>

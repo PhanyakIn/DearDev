@@ -19,6 +19,7 @@ function Footer() {
                         <li><Link to="/catalog">Catalog</Link></li>
                         <li><Link to="/news">News</Link></li>
                         <li><Link to="/contact">Contact</Link></li>
+                        <li><Link to="/recover">Recover order</Link></li>
                     </ul>
                 </nav>
                 <div className="footer-contact">

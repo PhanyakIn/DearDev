@@ -44,9 +44,13 @@ export async function fetchProducts() {
     const local = await import('../data/products.example');
     return local.products;
   }
+  // Select public columns explicitly. `file_path` is for the server only; the
+  // browser never needs to know the private storage object name.
   const [rows, contains] = await Promise.all([
-    supabaseFetch('products?select=*&is_active=eq.true&order=created_at'),
-    supabaseFetch('product_contains?select=*&order=position'),
+    supabaseFetch(
+      'products?select=id,name,price,currency,image_url,badge,short_detail,description,video_url,is_active,created_at&is_active=eq.true&order=created_at',
+    ),
+    supabaseFetch('product_contains?select=product_id,item,position&order=position'),
   ]);
   return rows.map((r) => mapProduct(r, contains));
 }
@@ -61,6 +65,6 @@ export async function fetchContact() {
     const local = await import('../data/products.example');
     return local.contact;
   }
-  const rows = await supabaseFetch('site_contact?select=*&id=eq.1');
+  const rows = await supabaseFetch('site_contact?select=discord,facebook&id=eq.1');
   return { discord: rows[0]?.discord || '', facebook: rows[0]?.facebook || '' };
 }

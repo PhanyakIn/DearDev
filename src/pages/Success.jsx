@@ -6,22 +6,25 @@ import "../css/Success.css";
 function Success() {
   const [params] = useSearchParams();
   const orderId = params.get("orderId") || "";
+  const token = params.get("token") || "";
+  const emailFailed = params.get("email") === "0";
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ready | missing | error
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const load = useCallback(() => {
-    if (!orderId) {
+    if (!orderId || !token) {
       setStatus("missing");
       return;
     }
-    fetchOrder(orderId)
+    fetchOrder(orderId, token)
       .then((data) => {
         setOrder(data);
         setStatus("ready");
       })
       .catch(() => setStatus("error"));
-  }, [orderId]);
+  }, [orderId, token]);
 
   useEffect(() => {
     load();
@@ -31,16 +34,40 @@ function Success() {
     if (!order?.licenseKey) return;
     try {
       await navigator.clipboard.writeText(order.licenseKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
     } catch {
       /* clipboard unavailable */
     }
   };
 
   if (status === "loading") return <div className="Success"><p>Loading…</p></div>;
-  if (status === "missing") return <div className="Success"><p>Order not found</p><Link to="/catalog">Back to store</Link></div>;
-  if (status === "error") return <div className="Success"><p>Could not load order details</p><Link to="/catalog">Back to store</Link></div>;
+  if (status === "missing") {
+    return (
+      <div className="Success">
+        <p>This order link is incomplete.</p>
+        <p><Link to="/recover">Recover your last order</Link> or contact the shop.</p>
+      </div>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="Success">
+        <p>This order link is invalid or has expired.</p>
+        <p><Link to="/recover">Recover your last order</Link> or contact the shop.</p>
+      </div>
+    );
+  }
 
   const paid = order.status === "paid";
 
@@ -61,7 +88,7 @@ function Success() {
           <p className="success-label">License key</p>
           <div className="success-key">
             <code>{order.licenseKey}</code>
-            <button type="button" onClick={copyKey}>{copied ? "Copied" : "Copy"}</button>
+            <button type="button" onClick={copyKey}>{copiedKey ? "Copied" : "Copy"}</button>
           </div>
 
           <p className="success-download-note">
@@ -70,7 +97,7 @@ function Success() {
           {order.remaining > 0 ? (
             <a
               className="success-download"
-              href={downloadUrl(orderId)}
+              href={downloadUrl(orderId, token)}
               target="_blank"
               rel="noreferrer"
               onClick={() => setTimeout(load, 1500)}
@@ -80,7 +107,15 @@ function Success() {
           ) : (
             <span className="success-download disabled">Download limit reached</span>
           )}
-          <p className="success-hint">This link was also sent to your email.</p>
+
+          <p className="success-hint">
+            {emailFailed
+              ? "Email delivery is not enabled. Save or bookmark this page — this link is the only way to download."
+              : "Save or bookmark this page. You need this link to download the product again."}
+          </p>
+          <button type="button" className="success-copy-link" onClick={copyLink}>
+            {copiedLink ? "Link copied" : "Copy this order link"}
+          </button>
         </div>
       )}
 

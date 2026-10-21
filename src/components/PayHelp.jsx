@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useContact } from "../lib/useShop";
+import trueWalletLogo from "../images/banks/truewallet.png";
 import "../css/PayHelp.css";
 
 // The contact columns are seeded with placeholders until they are replaced.
@@ -18,7 +19,8 @@ function PayHelp() {
 
   return (
     <div className="pay-help">
-      <p className="pay-help-title">Paying with TrueMoney or another e-wallet?</p>
+      <img className="pay-help-logo" src={trueWalletLogo} alt="TrueMoney Wallet" />
+      <p className="pay-help-title">Paying with TrueMoney?</p>
       <p className="pay-help-text">
         E-wallet slips can&apos;t be verified automatically. Message me and I&apos;ll
         arrange a manual payment for you.
@@ -26,7 +28,7 @@ function PayHelp() {
       <div className="pay-help-links">
         {discord && (
           <a
-            className="pay-help-link"
+            className="pay-help-link discord"
             href={discord}
             target="_blank"
             rel="noopener noreferrer"
@@ -36,7 +38,7 @@ function PayHelp() {
         )}
         {facebook && (
           <a
-            className="pay-help-link"
+            className="pay-help-link facebook"
             href={facebook}
             target="_blank"
             rel="noopener noreferrer"

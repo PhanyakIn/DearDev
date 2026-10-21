@@ -21,12 +21,18 @@ const config = {
   slipokBranchId: process.env.SLIPOK_BRANCH_ID || '',
   slipokApiUrl: process.env.SLIPOK_API_URL || 'https://api.slipok.com/api/line/apikey',
 
-  // Resend email
+  // Email is optional. If RESEND_API_KEY/EMAIL_FROM are not set, fulfilment
+  // still works and the success page warns the buyer to save the link.
   resendApiKey: process.env.RESEND_API_KEY || '',
-  emailFrom: process.env.EMAIL_FROM || 'DearDev <onboarding@resend.dev>',
+  emailFrom: process.env.EMAIL_FROM || '',
 
-  // Public site URL (used for links inside emails)
+  // Public site URL (used for links inside emails). If it is missing or points
+  // at localhost, the API derives the URL from the request headers instead.
   siteUrl: (process.env.SITE_URL || '').replace(/\/$/, ''),
+
+  // Secret used to sign order success/download links. Optional: if unset, the
+  // service-role key is used (also server-only).
+  orderTokenSecret: process.env.ORDER_TOKEN_SECRET || '',
 
   // Storage
   bucket: process.env.DIGITAL_BUCKET || 'digital-products',
@@ -48,6 +54,18 @@ const config = {
 
   // Reject oversized uploads before spending a SlipOK credit (~4.5 MB Vercel cap).
   maxSlipBytes: Number(process.env.MAX_SLIP_BYTES || 4000000),
+
+  // How much clock skew we allow between the bank's transaction timestamp and
+  // our order creation time. The slip must still be from this order's window.
+  slipClockSkewMinutes: Number(process.env.SLIP_CLOCK_SKEW_MINUTES || 5),
+
+  // SlipOK's dashboard log stores the slip image + payer data. Keep it off in
+  // production to reduce PII; set SLIPOK_LOG=true only while debugging.
+  slipokLog: process.env.SLIPOK_LOG === 'true',
+
+  // By default production only accepts an uploaded image. `data`/`url` inputs
+  // are a dev/integration convenience and are disabled unless explicitly enabled.
+  allowSlipData: process.env.ALLOW_SLIP_DATA === '1',
 };
 
 module.exports = { config, required };

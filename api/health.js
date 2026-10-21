@@ -26,10 +26,12 @@ module.exports = async (req, res) => {
       time: new Date().toISOString(),
     });
   } catch (e) {
+    // Log the real cause, but do not publish DB/provider error text.
+    // eslint-disable-next-line no-console
+    console.error('health: database check failed:', e.message);
     sendJson(res, 503, {
       ok: false,
       db: 'down',
-      error: e.message,
       time: new Date().toISOString(),
     });
   }

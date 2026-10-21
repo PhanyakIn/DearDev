@@ -1,17 +1,26 @@
 // Transactional email via Resend HTTP API.
 
 const { config } = require('./config');
+const { fetchWithTimeout } = require('./fetch');
+
+function isEmailConfigured() {
+  return Boolean(config.resendApiKey && config.emailFrom);
+}
 
 async function sendEmail({ to, subject, html }) {
-  if (!config.resendApiKey) throw new Error('Missing RESEND_API_KEY');
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${config.resendApiKey}`,
-      'Content-Type': 'application/json',
+  if (!isEmailConfigured()) throw new Error('Email is not configured');
+  const res = await fetchWithTimeout(
+    'https://api.resend.com/emails',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: config.emailFrom, to, subject, html }),
     },
-    body: JSON.stringify({ from: config.emailFrom, to, subject, html }),
-  });
+    8000,
+  );
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`resend ${res.status}: ${text}`);
@@ -52,4 +61,4 @@ async function sendDownloadEmail({ to, productName, licenseKey, downloadUrl, lim
   });
 }
 
-module.exports = { sendEmail, sendDownloadEmail, escapeHtml };
+module.exports = { sendEmail, sendDownloadEmail, escapeHtml, isEmailConfigured };

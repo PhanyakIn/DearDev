@@ -35,3 +35,8 @@ src/stock/files/
 
 
 .vscode
+
+# Vercel CLI link metadata (projectId / orgId — not secrets, but machine-specific)
+.vercel
+.env*
+!.env.example

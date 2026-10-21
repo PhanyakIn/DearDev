@@ -1,8 +1,9 @@
 // GET /api/order?orderId=...  → public-safe order status for the success page.
 
 const { rest } = require('../server/supabase');
-const { sendJson } = require('../server/http');
+const { sendJson, sendServerError } = require('../server/http');
 const { config } = require('../server/config');
+const { tokenMatches } = require('../server/orderToken');
 
 function maskEmail(email) {
   if (!email || !email.includes('@')) return email || '';
@@ -17,9 +18,15 @@ module.exports = async (req, res) => {
     return;
   }
   const orderId = String((req.query && req.query.orderId) || '').trim();
+  const token = String((req.query && req.query.token) || '');
   if (!orderId) return sendJson(res, 400, { error: 'Missing orderId' });
 
   try {
+    // The order id alone is not enough: the success link also carries a token.
+    if (!tokenMatches(orderId, token)) {
+      return sendJson(res, 403, { error: 'Invalid or missing order link.' });
+    }
+
     const orders = await rest(
       `orders?select=id,product_id,email,amount,currency,status,license_key,download_count,created_at,paid_at` +
         `&id=eq.${encodeURIComponent(orderId)}&limit=1`,
@@ -39,6 +46,7 @@ module.exports = async (req, res) => {
     sendJson(res, 200, {
       orderId: order.id,
       status: order.status,
+      productId: order.product_id,
       productName,
       amount: order.amount,
       currency: order.currency,
@@ -51,6 +59,6 @@ module.exports = async (req, res) => {
       createdAt: order.created_at,
     });
   } catch (e) {
-    sendJson(res, 500, { error: e.message });
+    sendServerError(res, e, 'order');
   }
 };

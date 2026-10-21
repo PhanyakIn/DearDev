@@ -23,7 +23,8 @@ loadEnv();
 const { rest } = require('../server/supabase');
 const { config } = require('../server/config');
 const { generateLicenseKey } = require('../server/license');
-const { sendDownloadEmail } = require('../server/email');
+const { sendDownloadEmail, isEmailConfigured } = require('../server/email');
+const { orderToken } = require('../server/orderToken');
 
 const COLUMNS =
   'id,product_id,email,amount,currency,status,license_key,slip_ref,download_count,paid_at,created_at';
@@ -130,17 +131,18 @@ async function markPaid(orderId) {
     return;
   }
 
+  const token = orderToken(orderId);
   const link = config.siteUrl
-    ? `${config.siteUrl}/success?orderId=${encodeURIComponent(orderId)}`
-    : `/success?orderId=${encodeURIComponent(orderId)}`;
+    ? `${config.siteUrl}/success?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`
+    : `/success?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`;
 
   console.log(`\nMarked ${orderId} as paid.`);
   console.log(`  buyer     : ${order.email}`);
   console.log(`  license   : ${licenseKey}`);
   console.log(`  download  : ${link}`);
 
-  if (!config.resendApiKey) {
-    console.log('  email     : skipped (RESEND_API_KEY not set — send the link manually)');
+  if (!isEmailConfigured()) {
+    console.log('  email     : skipped (RESEND_API_KEY / EMAIL_FROM not set — send the link manually)');
     return;
   }
   try {

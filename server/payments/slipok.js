@@ -7,9 +7,10 @@
 //          + optional { amount, log }
 
 const { config } = require('../config');
+const { fetchWithTimeout } = require('../fetch');
 
 // Returns { ok, data?, code?, message? }
-async function verifySlip({ data, url, imageBase64, imageMime, amountTHB, log = true }) {
+async function verifySlip({ data, url, imageBase64, imageMime, amountTHB, log = false }) {
   if (!config.slipokApiKey || !config.slipokBranchId) {
     throw new Error('Missing SLIPOK_API_KEY / SLIPOK_BRANCH_ID');
   }
@@ -36,7 +37,7 @@ async function verifySlip({ data, url, imageBase64, imageMime, amountTHB, log = 
     });
   }
 
-  const res = await fetch(endpoint, { method: 'POST', headers, body });
+  const res = await fetchWithTimeout(endpoint, { method: 'POST', headers, body }, 8000);
   const text = await res.text();
   let json;
   try {

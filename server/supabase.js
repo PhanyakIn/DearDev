@@ -2,6 +2,9 @@
 // NEVER import this from src/ — it bypasses Row Level Security.
 
 const { config } = require('./config');
+const { fetchWithTimeout } = require('./fetch');
+
+const TIMEOUT_MS = 8000;
 
 function assertConfigured() {
   if (!config.supabaseUrl || !config.supabaseServiceKey) {
@@ -17,15 +20,19 @@ const baseHeaders = () => ({
 // Thin PostgREST wrapper: get/post/patch rows.
 async function rest(path, { method = 'GET', body, prefer } = {}) {
   assertConfigured();
-  const res = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, {
-    method,
-    headers: {
-      ...baseHeaders(),
-      'Content-Type': 'application/json',
-      ...(prefer ? { Prefer: prefer } : {}),
+  const res = await fetchWithTimeout(
+    `${config.supabaseUrl}/rest/v1/${path}`,
+    {
+      method,
+      headers: {
+        ...baseHeaders(),
+        'Content-Type': 'application/json',
+        ...(prefer ? { Prefer: prefer } : {}),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+    TIMEOUT_MS,
+  );
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const err = new Error(`supabase ${res.status}: ${text}`);
@@ -41,11 +48,15 @@ async function rest(path, { method = 'GET', body, prefer } = {}) {
 // Call a Postgres function (RPC), e.g. consume_download.
 async function rpc(fn, args) {
   assertConfigured();
-  const res = await fetch(`${config.supabaseUrl}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(args || {}),
-  });
+  const res = await fetchWithTimeout(
+    `${config.supabaseUrl}/rest/v1/rpc/${fn}`,
+    {
+      method: 'POST',
+      headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(args || {}),
+    },
+    TIMEOUT_MS,
+  );
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`supabase rpc ${fn} ${res.status}: ${text}`);
@@ -58,13 +69,14 @@ async function rpc(fn, args) {
 async function createSignedUrl(bucket, objectPath, expiresIn) {
   assertConfigured();
   const clean = String(objectPath).replace(/^\/+/, '');
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${config.supabaseUrl}/storage/v1/object/sign/${bucket}/${clean}`,
     {
       method: 'POST',
       headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ expiresIn }),
     },
+    TIMEOUT_MS,
   );
   if (!res.ok) {
     const text = await res.text().catch(() => '');

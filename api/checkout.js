@@ -2,8 +2,9 @@
 // Creates a pending order and returns a per-order PromptPay QR (not pinned).
 
 const { rest } = require('../server/supabase');
-const { readJsonBody, sendJson } = require('../server/http');
+const { readJsonBody, sendJson, sendServerError } = require('../server/http');
 const { config } = require('../server/config');
+const { orderToken } = require('../server/orderToken');
 const promptpay = require('../server/payments/promptpay');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,6 +53,9 @@ module.exports = async (req, res) => {
     const product = products && products[0];
     if (!product) return sendJson(res, 404, { error: 'Product not found' });
     if (!product.file_path) return sendJson(res, 409, { error: 'Product file not configured' });
+    if (product.currency && String(product.currency).toUpperCase() !== 'THB') {
+      return sendJson(res, 409, { error: 'This product is not priced in THB' });
+    }
 
     const amountSatang = Math.round(Number(product.price) * 100);
     if (!Number.isFinite(amountSatang) || amountSatang <= 0) {
@@ -70,6 +74,9 @@ module.exports = async (req, res) => {
         currency: product.currency || 'THB',
         status: 'pending',
         qr_expires_at: expiresAt,
+        // Start the attempt counter at zero. The counter is advanced with a
+        // compare-and-swap in verify-slip, so parallel uploads cannot exceed it.
+        slip_payload: { attempts: 0 },
       },
     });
     const order = rows && rows[0];
@@ -80,6 +87,7 @@ module.exports = async (req, res) => {
 
     sendJson(res, 200, {
       orderId: order.id,
+      accessToken: orderToken(order.id),
       qr, // data URL image — raw proxy is never sent to the client
       amount: amountSatang, // satang
       amountTHB: promptpay.satangToTHB(amountSatang),
@@ -89,6 +97,6 @@ module.exports = async (req, res) => {
       downloadLimit: config.downloadLimit,
     });
   } catch (e) {
-    sendJson(res, 500, { error: e.message });
+    sendServerError(res, e, 'checkout');
   }
 };

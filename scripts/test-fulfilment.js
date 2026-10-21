@@ -79,9 +79,17 @@ async function main() {
     const unpaid = await createOrder(`fulfil-unpaid+${stamp}@example.com`);
     created.push(unpaid.orderId);
     const rUnpaid = mockRes();
-    await download({ method: 'GET', query: { orderId: unpaid.orderId } }, rUnpaid);
+    await download(
+      { method: 'GET', query: { orderId: unpaid.orderId, token: unpaid.accessToken } },
+      rUnpaid,
+    );
     if (rUnpaid.statusCode === 403) ok('unpaid order is refused', '403');
     else bad('unpaid order could download!', `expected 403, got ${rUnpaid.statusCode}`);
+
+    const rNoToken = mockRes();
+    await download({ method: 'GET', query: { orderId: unpaid.orderId } }, rNoToken);
+    if (rNoToken.statusCode === 403) ok('missing order token is refused', '403');
+    else bad('missing token was accepted!', `expected 403, got ${rNoToken.statusCode}`);
 
     // ---- 2. paid order downloads up to the cap ---------------------------
     const paid = await createOrder(`fulfil-paid+${stamp}@example.com`);
@@ -98,7 +106,10 @@ async function main() {
 
     for (let i = 1; i <= config.downloadLimit; i += 1) {
       const res = mockRes();
-      await download({ method: 'GET', query: { orderId: paid.orderId } }, res);
+      await download(
+        { method: 'GET', query: { orderId: paid.orderId, token: paid.accessToken } },
+        res,
+      );
       if (res.statusCode !== 302 || !res.headers.location) {
         bad(`download #${i} failed`, `${res.statusCode} ${json(res).error || ''}`);
         break;
@@ -114,7 +125,10 @@ async function main() {
 
     // ---- 3. the cap must hold --------------------------------------------
     const rOver = mockRes();
-    await download({ method: 'GET', query: { orderId: paid.orderId } }, rOver);
+    await download(
+      { method: 'GET', query: { orderId: paid.orderId, token: paid.accessToken } },
+      rOver,
+    );
     if (rOver.statusCode === 403) ok('over-limit download refused', 'cap enforced');
     else bad('cap NOT enforced', `expected 403, got ${rOver.statusCode}`);
 

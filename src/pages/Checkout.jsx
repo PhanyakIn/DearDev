@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { fetchProductById } from "../lib/shopApi";
-import { startCheckout, submitSlip, prepareSlipImage } from "../lib/checkout";
+import { startCheckout, submitSlip, prepareSlipImage, rememberOrder } from "../lib/checkout";
 import PaymentMethods from "../components/PaymentMethods";
 import PayHelp from "../components/PayHelp";
 import "../css/Checkout.css";
@@ -25,22 +25,115 @@ function useCountdown(expiresAt) {
   return left;
 }
 
+const SLIP_ACCEPT = "image/png,image/jpeg,image/webp,image/jfif";
+const SLIP_EXT_RE = /\.(png|jpe?g|webp|jfif)$/i;
+
+// Browsers sometimes report an empty type for .jfif files, so fall back to the
+// file extension before rejecting a dropped slip.
+function isSlipFile(file) {
+  if (!file) return false;
+  return SLIP_ACCEPT.split(",").includes(file.type) || SLIP_EXT_RE.test(file.name || "");
+}
+
+// The charge (order + QR image) only lives in React state, so a refresh would
+// silently drop the order and strand a buyer who already paid. Keep it in
+// sessionStorage so the QR screen survives a reload in the same tab.
+const CHARGE_STORAGE_KEY = "dearcheckout:charge";
+
+function readStoredCharge(productId) {
+  try {
+    const raw = window.sessionStorage.getItem(CHARGE_STORAGE_KEY);
+    if (!raw) return { charge: null, expired: false };
+    const saved = JSON.parse(raw);
+    if (!saved || saved.productId !== productId || !saved.charge) {
+      return { charge: null, expired: false };
+    }
+    const expiresAt = new Date(saved.charge.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      // Not removed here: the caller decides what to do (redirect + clear).
+      return { charge: null, expired: true };
+    }
+    return { charge: saved.charge, expired: false };
+  } catch {
+    return { charge: null, expired: false }; // corrupt JSON / blocked storage
+  }
+}
+
+function storeCharge(productId, charge) {
+  try {
+    window.sessionStorage.setItem(
+      CHARGE_STORAGE_KEY,
+      JSON.stringify({ productId, charge }),
+    );
+  } catch {
+    /* quota/private mode: keep working from memory only */
+  }
+}
+
+function clearStoredCharge() {
+  try {
+    window.sessionStorage.removeItem(CHARGE_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [email, setEmail] = useState("");
-  const [charge, setCharge] = useState(null); // { orderId, qr, amount, expiresAt }
+  const [charge, setCharge] = useState(() => readStoredCharge(id).charge); // { orderId, qr, amount, expiresAt }
   const [slipFile, setSlipFile] = useState(null);
   const [slipInfo, setSlipInfo] = useState("");
+  const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const expiredStored = useRef(false);
 
   const secondsLeft = useCountdown(charge?.expiresAt);
 
   useEffect(() => {
     fetchProductById(id).then((p) => setProduct(p || null)).catch(() => {});
+  }, [id]);
+
+  // Restore the charge for this product. An expired one must never render the
+  // QR screen again, so the buyer is sent back to the product page instead.
+  useEffect(() => {
+    const stored = readStoredCharge(id);
+    if (stored.expired) {
+      expiredStored.current = true;
+      clearStoredCharge();
+      navigate(`/product/${id}`, { replace: true });
+      return;
+    }
+    expiredStored.current = false;
+    setCharge(stored.charge);
+    if (stored.charge) {
+      rememberOrder({
+        orderId: stored.charge.orderId,
+        accessToken: stored.charge.accessToken,
+        productId: id,
+      });
+    }
+  }, [id, navigate]);
+
+  // Dev-only shortcut: /checkout/prod1?preview=qr jumps straight to the QR
+  // screen without filling the form (uses the mock API from setupProxy.js).
+  // An existing charge is reused so a refresh keeps the same QR and countdown.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    if (new URLSearchParams(window.location.search).get("preview") !== "qr") return;
+    if (expiredStored.current) return; // expired reload → redirect handled above
+    if (readStoredCharge(id).charge) return;
+    startCheckout(id, "demo@example.com")
+      .then((res) => {
+        setCharge(res);
+        storeCharge(id, res);
+        rememberOrder({ orderId: res.orderId, accessToken: res.accessToken, productId: id });
+      })
+      .catch(() => {});
   }, [id]);
 
   const createQr = async (e) => {
@@ -51,11 +144,44 @@ function Checkout() {
     try {
       const res = await startCheckout(id, email);
       setCharge(res);
+      storeCharge(id, res);
+      rememberOrder({ orderId: res.orderId, accessToken: res.accessToken, productId: id });
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
     }
+  };
+
+  const chooseSlip = (file) => {
+    if (file && !isSlipFile(file)) {
+      setSlipFile(null);
+      setSlipInfo("");
+      setError("Please choose an image file (PNG, JPG, WEBP or JFIF).");
+      return;
+    }
+    setSlipFile(file || null);
+    setSlipInfo("");
+    setError("");
+    setNotice("");
+  };
+
+  const onSlipDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragging(true);
+  };
+
+  const onSlipDragLeave = (e) => {
+    // Ignore the leave events fired while moving over child elements.
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setDragging(false);
+  };
+
+  const onSlipDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    chooseSlip(e.dataTransfer.files && e.dataTransfer.files[0]);
   };
 
   const sendSlip = async (e) => {
@@ -70,12 +196,17 @@ function Checkout() {
       const prepared = await prepareSlipImage(slipFile);
       setSlipInfo(`Ready to send — ${Math.max(1, Math.round(prepared.bytes / 1024))} KB`);
       setNotice("");
-      const res = await submitSlip(charge.orderId, {
+      const res = await submitSlip(charge.orderId, charge.accessToken, {
         imageBase64: prepared.imageBase64,
         imageMime: prepared.imageMime,
       });
       if (res.status === "paid") {
-        navigate(`/success?orderId=${encodeURIComponent(charge.orderId)}`);
+        clearStoredCharge();
+        const emailFlag = res.emailSent === false ? "&email=0" : "";
+        navigate(
+          `/success?orderId=${encodeURIComponent(charge.orderId)}` +
+            `&token=${encodeURIComponent(charge.accessToken)}${emailFlag}`,
+        );
         return;
       }
       setNotice(res.message || "Verification failed. Please try again or contact the shop.");
@@ -142,7 +273,7 @@ function Checkout() {
             <p className={`checkout-timer${secondsLeft === 0 ? " expired" : ""}`}>
               {secondsLeft > 0
                 ? `QR expires in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`
-                : "QR expired — if you already paid, upload your slip below; otherwise go back and generate a new QR"}
+                : "QR expired — if you already paid, upload your slip below; otherwise go back and start a new checkout"}
             </p>
           )}
 
@@ -151,16 +282,37 @@ function Checkout() {
           <hr />
           <p className="checkout-step">Already paid? Upload your slip to get your product instantly</p>
           <form onSubmit={sendSlip}>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/jfif"
-              onChange={(e) => {
-                setSlipFile(e.target.files?.[0] || null);
-                setSlipInfo("");
-                setError("");
-                setNotice("");
-              }}
-            />
+            <div
+              className={`checkout-dropzone${dragging ? " is-dragging" : ""}`}
+              onDragOver={onSlipDragOver}
+              onDragEnter={onSlipDragOver}
+              onDragLeave={onSlipDragLeave}
+              onDrop={onSlipDrop}
+            >
+              <svg
+                className="checkout-dropzone-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                <polyline points="16 16 12 12 8 16" />
+                <line x1="12" y1="12" x2="12" y2="21" />
+              </svg>
+              <p className="checkout-dropzone-text">
+                Drag &amp; drop your slip here, or choose a file below
+              </p>
+              <input
+                type="file"
+                accept={SLIP_ACCEPT}
+                onChange={(e) => chooseSlip(e.target.files?.[0])}
+              />
+            </div>
+            {slipFile && <p className="checkout-hint">Selected: {slipFile.name}</p>}
             <p className="checkout-hint">
               Use the slip from your banking app. E-wallet slips (e.g. TrueMoney) cannot be
               verified automatically — contact us if that is all you have.
@@ -172,25 +324,13 @@ function Checkout() {
           </form>
           {error && <p className="checkout-error">{error}</p>}
           {notice && <p className="checkout-notice">{notice}</p>}
-
-          <button
-            type="button"
-            className="checkout-reset"
-            onClick={() => {
-              setCharge(null);
-              setSlipFile(null);
-              setSlipInfo("");
-              setNotice("");
-              setError("");
-            }}
-          >
-            Start over
-          </button>
         </div>
       )}
 
       <p className="checkout-back">
-        <Link to={`/product/${id}`}>← Back to product</Link>
+        <Link to={`/product/${id}`} onClick={clearStoredCharge}>
+          ← Back to product
+        </Link>
       </p>
     </div>
   );

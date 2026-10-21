@@ -30,6 +30,7 @@ npm start
 | `npm run check:slipok` | ตรวจ branch/API key + โควต้าคงเหลือ — ใส่ `-- --slip slip.jpg` เพื่อทดสอบสลิปจริง 1 ใบ |
 | `npm run check:fulfilment` | พิสูจน์ว่า paid order โหลดได้จริง + cap 3 ครั้งบังคับใช้ (ไม่ใช้เงิน) |
 | `npm run smoke` | ทดสอบ pipeline ทั้งเส้น (สร้าง QR + ออเดอร์ แล้วลบทิ้ง) — ใส่ `-- --qr` เพื่อเซฟรูป QR ไว้สแกน |
+| `bash scripts/push-env-vercel.sh` | ดัน env จาก `.env.local` ขึ้น Vercel (Production + Preview) — ไม่พิมพ์ค่าให้เห็น |
 | `npm run orders -- list pending` | ดู/จัดการออเดอร์ (ทางออกฉุกเฉิน) |
 
 ## โครงสร้าง
@@ -47,7 +48,7 @@ src/
 api/            # Vercel serverless: products, contact, checkout, verify-slip, order, download, health
 server/         # โค้ดฝั่ง server (ไม่ถูก bundle เข้า frontend)
   payments/     # promptpay (สร้าง QR), slipok (ตรวจสลิป)
-scripts/        # setup-supabase.sh (wizard), orders.js, check-storage.js, check-slipok.js, test-fulfilment.js, smoke-checkout.js
+scripts/        # setup-supabase.sh (wizard), push-env-vercel.sh, orders.js, check-storage.js, check-slipok.js, test-fulfilment.js, smoke-checkout.js
 supabase/       # schema.sql (ตาราง + RLS + consume_download)
 public/         # index.html, manifest, icons
 ```
@@ -59,25 +60,29 @@ public/         # index.html, manifest, icons
 ```
 กดซื้อ → /api/checkout (สร้าง order + PromptPay QR ต่อออเดอร์)
    → ลูกค้าสแกนจ่าย → อัปโหลดสลิป → /api/verify-slip
-   → SlipOK ตรวจสลิป +เช็ค 3 ชั้น (ยอด/ผู้รับ/ref ไม่ซ้ำ)
-   → mark paid + สุ่ม license key + ส่งอีเมล (Resend)
-   → หน้า /success: ปุ่มดาวน์โหลด (สูงสุด 3 ครั้ง) + license key
+   → SlipOK ตรวจสลิป + เช็คซ้ำ (ยอด/ผู้รับ/เวลา/ref ไม่ซ้ำ)
+   → mark paid + สุ่ม license key + ส่งอีเมล (ถ้าตั้งค่าไว้ — ไม่บังคับ)
+   → หน้า /success: license key + ปุ่มดาวน์โหลด (สูงสุด 3 ครั้ง)
 ```
+
+> ลิงก์ `/success` และ `/api/download` มี **token** ประจำออเดอร์ ถ้าไม่ได้ตั้งอีเมล
+> ลูกค้าต้องเซฟลิงก์นี้ไว้ (หน้ามีปุ่ม copy) และกด “Recover order” ในเบราว์เซอร์เดิมได้ 30 วัน
 
 **Endpoint**
 | Route | ทำอะไร |
 |---|---|
-| `POST /api/checkout` | สร้างออเดอร์ + QR (ไม่ปัก QR ถาวร) |
-| `POST /api/verify-slip` | ตรวจสลิป + ปล่อยของ (idempotent) |
-| `GET /api/order?orderId=` | สถานะออเดอร์สำหรับหน้า success |
-| `GET /api/download?orderId=` | signed URL อายุสั้น + จำกัด 3 ครั้ง |
+| `POST /api/checkout` | สร้างออเดอร์ + QR + `accessToken` (ไม่ปัก QR ถาวร) |
+| `POST /api/verify-slip` | ตรวจสลิป + ปล่อยของ (ต้องมี token; idempotent) |
+| `GET /api/order?orderId=&token=` | สถานะออเดอร์สำหรับหน้า success |
+| `GET /api/download?orderId=&token=` | signed URL อายุสั้น + จำกัด 3 ครั้ง |
 
 **ต้องตั้งค่าก่อนใช้จริง**
 1. รัน SQL ใน `supabase/schema.sql` (ทุก statement เป็น idempotent → รันซ้ำได้)
 2. สร้าง Storage bucket **private** ชื่อ `digital-products` แล้วอัปไฟล์ `.zip` เข้าไป
 3. ตั้ง `products.file_path` ของแต่ละสินค้าให้ตรงกับชื่อไฟล์ใน bucket เป๊ะ ๆ
 4. สมัคร SlipOK → ใส่ `SLIPOK_API_KEY` / `SLIPOK_BRANCH_ID` **และผูกบัญชีรับเงินใน LINE LIFF**
-5. สมัคร Resend → verify domain → ใส่ `RESEND_API_KEY` / `EMAIL_FROM`
+5. (ไม่บังคับ) สมัครผู้ให้บริการอีเมล → ใส่ `RESEND_API_KEY` / `EMAIL_FROM`
+   ถ้าไม่ตั้ง ระบบยังขายได้: หน้า `/success` แสดง license + ลิงก์ดาวน์โหลดให้เซฟเอง
 6. ตั้ง `PROMPTPAY_PROXY`, `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL`
 
 > ใช้ wizard `bash scripts/setup-supabase.sh` เพื่อไล่ทีละขั้น (เขียนค่าลง `.env.local` ให้ด้วย)
@@ -108,22 +113,30 @@ public/         # index.html, manifest, icons
 | `SUPABASE_SERVICE_ROLE_KEY` | server | **ห้าม** ใส่ `REACT_APP_` เด็ดขาด |
 | `PROMPTPAY_PROXY` | server | เบอร์โทร 10 หลัก หรือเลขบัตร ปชช. 13 หลัก (**ไม่ใช่เลขบัญชี**) |
 | `SLIPOK_API_KEY` / `SLIPOK_BRANCH_ID` | server | |
-| `RESEND_API_KEY` / `EMAIL_FROM` | server | |
-| `SITE_URL` | server | ใช้สร้างลิงก์ในอีเมล |
+| `RESEND_API_KEY` / `EMAIL_FROM` | server | **ไม่บังคับ** — ถ้าไม่ตั้ง ลูกค้าต้องเซฟลิงก์เอง |
+| `ORDER_TOKEN_SECRET` | server | **ไม่บังคับ** — ใช้เซ็นลิงก์ออเดอร์; ถ้าไม่ตั้งใช้ service-role key (ถ้าตั้ง ต้องตั้งค่าเดียวกันบน Vercel) |
+| `SITE_URL` | server | ใช้สร้างลิงก์ในอีเมล (ถ้าเป็น localhost จะ derive จาก request) |
 | `DOWNLOAD_LIMIT` | server | จำนวนโหลดสูงสุดต่อออเดอร์ (default 3) |
 | `SIGNED_URL_TTL` | server | อายุ signed URL เป็นวินาที (default 300) |
 | `QR_TTL_MINUTES` | server | นับถอยหลังบนหน้าเว็บ (default 15) |
 | `QR_GRACE_MINUTES` | server | ยังรับสลิปหลัง QR หมดอายุ (default 120) |
 | `MAX_VERIFY_ATTEMPTS` | server | จำนวนครั้งตรวจสลิปต่อออเดอร์ (default 12) |
 | `CHECKOUT_MAX_PER_WINDOW` | server | จำนวนออเดอร์สูงสุดต่ออีเมลใน `CHECKOUT_WINDOW_MINUTES` |
+| `SLIP_CLOCK_SKEW_MINUTES` | server | เผื่อเวลา clock skew ตอนเทียบเวลาสลิป (default 5) |
+| `SLIPOK_LOG` | server | `false` = ไม่เก็บ log/PII ฝั่ง SlipOK (default) |
+| `ALLOW_SLIP_DATA` | server | `1` = อนุญาต `data`/`url` (สำหรับ dev); production รับเฉพาะรูปที่อัปโหลด |
 
 **สิ่งที่ระบบกันไว้ให้แล้ว**
 - QR สร้างใหม่ต่อออเดอร์ → ยอดตรง → ตรวจสลิปแม่น (ไม่ปัก QR ถาวรบนเว็บ)
+- ตรวจซ้ำแบบ fail-closed: ยอดต้องตรงเป๊ะ, ต้องมี ref, เวลาสลิปต้องไม่ก่อนออเดอร์ (เผื่อ skew 5 นาที)
 - สลิปซ้ำถูกบล็อกด้วย unique index บน `slip_ref`
+- ลิงก์ success/download/verify ต้องมี token ประจำออเดอร์ (กันคนที่รู้แค่ orderId)
 - โหลดเกินโควตาถูกบล็อกด้วย `consume_download()` แบบ atomic
 - รูปสลิปถูกย่อในเบราว์เซอร์ก่อนอัปโหลด (กัน Vercel 4.5 MB limit)
-- จำกัดจำนวนครั้งตรวจสลิป + จำกัดการสร้างออเดอร์รัว ๆ (ประหยัด credit SlipOK)
-- ออเดอร์ที่เลยกำหนดถูกปิดเป็น `expired` ไม่ค้างในคิว
+- จำกัดจำนวนครั้งตรวจสลิป (atomic) + จำกัดการสร้างออเดอร์รัว ๆ (ประหยัด credit SlipOK)
+- สลิปผิดลองใหม่ได้จนครบ `MAX_VERIFY_ATTEMPTS` แล้วออเดอร์ถูกปิดเป็น `rejected`
+- ออเดอร์ที่เลยกำหนดจะถูกปิดเป็น `expired` เมื่อมีการตรวจสลิปหลัง grace หรือรัน `orders expire`
+- ไม่เก็บ log/PII ฝั่ง SlipOK (`SLIPOK_LOG=false`) และ production รับเฉพาะรูปสลิปที่อัปโหลด
 
 **จัดการออเดอร์ (ทางออกฉุกเฉิน)**
 
@@ -163,7 +176,7 @@ npm run orders -- prune --apply --days 365   # เก็บ PII ของออ�
 | ลูกค้าจ่ายผ่าน TrueMoney | เงินเข้าบัญชีจริง แต่สลิป e-wallet ไม่มี QR → ระบบยืนยันไม่ได้ ต้องปล่อยของมือ |
 | `Product file not configured` (409) | `products.file_path` ว่าง → รัน `npm run check:storage` |
 | อัปสลิปแล้วเงียบ/413 | รูปใหญ่เกิน → ระบบย่อให้แล้ว; ถ้ายังไม่ผ่านให้ใช้ภาพความละเอียดต่ำลง |
-| อีเมลไม่ถึงลูกค้า | ยังไม่ verify domain ใน Resend — หน้า `/success` ยังใช้ได้ |
+| อีเมลไม่ถึงลูกค้า | ยังไม่ได้ตั้ง `RESEND_API_KEY`/`EMAIL_FROM` หรือยังไม่ verify domain — หน้า `/success` ยังใช้ได้ ให้ลูกค้าเซฟลิงก์ |
 | `Missing PROMPTPAY_PROXY` | ยังไม่ได้ตั้ง env (หรือตั้งบน Vercel แต่ยังไม่ redeploy) |
 
 **ข้อจำกัดเรื่อง TrueMoney Wallet**: ทรูมันนี่สแกนจ่าย QR พร้อมเพย์ได้ (เงินเข้าบัญชีจริง)

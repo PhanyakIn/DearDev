@@ -7,6 +7,13 @@
   text-align: center;
 }
 
+.pay-help-logo {
+  display: block;
+  height: 26px;
+  width: auto;
+  margin: 0 auto 8px;
+}
+
 .pay-help-title {
   margin: 0 0 6px;
   font-weight: 700;
@@ -36,10 +43,19 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 600;
-  transition: background-color 0.2s, transform 0.2s;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+/* Brand colours — same as each platform's logo. */
+.pay-help-link.discord {
+  background-color: #5865f2;
+}
+
+.pay-help-link.facebook {
+  background-color: #1877f2;
 }
 
 .pay-help-link:hover {
-  background-color: var(--gold-color);
+  filter: brightness(1.15);
   transform: translateY(-2px);
 }

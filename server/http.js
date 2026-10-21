@@ -37,4 +37,13 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-module.exports = { readRawBody, readJsonBody, sendJson };
+// Log the real cause server-side, but never leak Supabase/SlipOK/Resend
+// internals (table names, env names, provider errors) to the browser.
+function sendServerError(res, error, context) {
+  const message = error && error.message ? error.message : String(error || 'unknown error');
+  // eslint-disable-next-line no-console
+  console.error(`${context || 'server error'}: ${message}`);
+  sendJson(res, 500, { error: 'Something went wrong. Please try again.' });
+}
+
+module.exports = { readRawBody, readJsonBody, sendJson, sendServerError };
