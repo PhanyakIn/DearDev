@@ -36,6 +36,18 @@
   font-size: 14px;
 }
 
+/* Full-colour logo with a transparent background, centred above the
+   TrueMoney/manual-payment note. */
+.product-payment-truemoney {
+  display: block;
+  height: 32px;
+  width: auto;
+  margin: 2px auto 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
 .product-payment-alt a {
   color: var(--gold-color);
   font-weight: 600;

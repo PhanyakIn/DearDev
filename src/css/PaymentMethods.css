@@ -44,19 +44,6 @@
   object-fit: contain;
 }
 
-/* TrueMoney is a full-colour logo, so it sits on white instead of a brand
-   tile like the bank glyphs. Slips are verified manually (see PayHelp). */
-.payment-method-banks li.payment-method-manual {
-  background-color: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
-  padding: 6px;
-}
-
-.payment-method-banks li.payment-method-manual img {
-  width: 100%;
-  height: auto;
-}
-
 .payment-method-note {
   margin: 0;
   font-size: 12px;

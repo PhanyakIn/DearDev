@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import PaymentMethods from "./PaymentMethods";
+import trueWalletLogo from "../images/banks/truewallet.png";
 import "../css/ContactProduct.css";
 
 function ContactProduct({ productId }) {
@@ -10,6 +11,12 @@ function ContactProduct({ productId }) {
       <p>Pay with PromptPay and get your files instantly and automatically.</p>
 
       <PaymentMethods />
+
+      <img
+        className="product-payment-truemoney"
+        src={trueWalletLogo}
+        alt="TrueMoney Wallet"
+      />
 
       <p className="product-payment-alt">
         Only have TrueMoney or another e-wallet?{" "}
