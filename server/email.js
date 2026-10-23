@@ -67,10 +67,22 @@ async function sendViaSmtp({ to, subject, html }) {
   return { id: info && info.messageId };
 }
 
+// Diagnostic only: runs the SMTP connect+auth handshake without sending mail.
+// Used by the (token-protected) /api/email-check debug route.
+async function verifySmtp() {
+  const mailer = getTransporter();
+  if (!mailer) return { ok: false, error: 'transport unavailable (nodemailer missing)' };
+  try {
+    await mailer.verify();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.code || e.message };
+  }
+}
+
 async function sendEmail({ to, subject, html }) {
   if (!isEmailConfigured()) throw new Error('Email is not configured');
   if (smtpConfigured()) return sendViaSmtp({ to, subject, html });
-
   const res = await fetchWithTimeout(
     'https://api.resend.com/emails',
     {
@@ -130,4 +142,12 @@ async function sendDownloadEmail({ to, productName, licenseKey, downloadUrl, ord
   });
 }
 
-module.exports = { sendEmail, sendDownloadEmail, escapeHtml, isEmailConfigured };
+module.exports = {
+  sendEmail,
+  sendDownloadEmail,
+  escapeHtml,
+  isEmailConfigured,
+  smtpConfigured,
+  resendConfigured,
+  verifySmtp,
+};
