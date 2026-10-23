@@ -130,6 +130,9 @@ function Success() {
               ? "Email delivery is not enabled. Save or bookmark this page — this link is the only way to download."
               : "Save or bookmark this page. You need this link to download the product again."}
           </p>
+          <p className="success-hint">
+            Didn&apos;t receive the email? Check your Junk/Spam folder — this page can always be used to download instead.
+          </p>
           <button type="button" className="success-copy-link" onClick={copyLink}>
             {copiedLink ? "Link copied" : "Copy this order link"}
           </button>

@@ -12,6 +12,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Product1 from './Product1';
 import Checkout from './Checkout';
 import Success from './Success';
+import Download from './Download';
 import Recover from './Recover';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/product/:id" element={<Product1 />} />
           <Route path="/checkout/:id" element={<Checkout />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/download" element={<Download />} />
           <Route path="/recover" element={<Recover />} />
         </Routes>
         </main>

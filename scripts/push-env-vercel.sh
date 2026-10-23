@@ -48,10 +48,16 @@ KEYS=(
   PROMPTPAY_PROXY
   SLIPOK_API_KEY
   SLIPOK_BRANCH_ID
+  RESEND_API_KEY
+  EMAIL_FROM
+  SMTP_HOST
+  SMTP_PORT
+  SMTP_USER
+  SMTP_PASS
 )
 
 # Stored as "secret": the value can never be viewed again in the dashboard.
-SECRET_KEYS=("SUPABASE_SERVICE_ROLE_KEY" "SLIPOK_API_KEY")
+SECRET_KEYS=("SUPABASE_SERVICE_ROLE_KEY" "SLIPOK_API_KEY" "SMTP_PASS")
 
 ENVIRONMENTS="production,preview"
 
@@ -95,7 +101,22 @@ if [[ ! -f ".vercel/project.json" && ! -f ".vercel/repo.json" ]]; then
 fi
 green "✓ Project linked"
 
-# ------------------------------------------------------------- read values
+# Keys that may be empty: the app treats email as optional and runs fine
+# without it (the success page is always the source of truth).
+#   RESEND_API_KEY — only useful once a real domain is verified there.
+#   EMAIL_FROM / SMTP_* — Gmail SMTP; missing keys simply disable email.
+# The consistency checks below still refuse a half-configured transport.
+OPTIONAL_KEYS=("RESEND_API_KEY" "EMAIL_FROM" "SMTP_HOST" "SMTP_PORT" "SMTP_USER" "SMTP_PASS")
+
+is_optional() {
+  local candidate
+  for candidate in "${OPTIONAL_KEYS[@]}"; do
+    [[ "$candidate" == "$1" ]] && return 0
+  done
+  return 1
+}
+
+# --------------------------------------------------------------- read values
 read_env() {
   # last matching line wins; everything after the first '=' is the value.
   # Whitespace around the value is trimmed — a stray space would be pushed to
@@ -109,13 +130,32 @@ cyan "Variables found in $ENV_FILE"
 for key in "${KEYS[@]}"; do
   value="$(read_env "$key")"
   if [[ -z "$value" ]]; then
-    MISSING+=("$key")
-    printf '  %-34s %s\n' "$key" "MISSING"
+    if is_optional "$key"; then
+      printf '  %-34s %s\n' "$key" "MISSING (optional)"
+    else
+      MISSING+=("$key")
+      printf '  %-34s %s\n' "$key" "MISSING"
+    fi
   else
     # length only — never the value itself
     printf '  %-34s %s\n' "$key" "set (${#value} chars)"
   fi
 done
+
+# Email consistency: a half-configured transport silently disables email in
+# the app (isEmailConfigured), which surprises nobody until a buyer says they
+# never received a link. Fail loudly instead.
+env_set() { [[ -n "$(read_env "$1")" ]]; }
+if env_set SMTP_HOST || env_set SMTP_USER || env_set SMTP_PASS; then
+  if ! (env_set SMTP_HOST && env_set SMTP_USER && env_set SMTP_PASS); then
+    red "✗ SMTP is half configured — SMTP_HOST, SMTP_USER and SMTP_PASS must all be set (SMTP_PORT defaults to 465)."
+    exit 1
+  fi
+  if ! env_set EMAIL_FROM; then
+    red "✗ EMAIL_FROM is required when SMTP is configured, and it must be the same Gmail account as SMTP_USER."
+    exit 1
+  fi
+fi
 
 # SITE_URL must point at the deployed site, not localhost.
 SITE_URL_VALUE="$(read_env SITE_URL)"

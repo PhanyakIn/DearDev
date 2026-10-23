@@ -132,9 +132,16 @@ async function markPaid(orderId) {
   }
 
   const token = orderToken(orderId);
-  const link = config.siteUrl
-    ? `${config.siteUrl}/success?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`
-    : `/success?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`;
+  const params = `orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`;
+  const base = config.siteUrl.replace(/\/$/, '');
+  // Primary CTA → /download confirm page (quota is consumed by the human
+  // click there, not by link scanners). The success page is the fallback.
+  const link = base
+    ? `${base}/download?${params}`
+    : `/download?${params}`;
+  const orderUrl = base
+    ? `${base}/success?${params}`
+    : `/success?${params}`;
 
   console.log(`\nMarked ${orderId} as paid.`);
   console.log(`  buyer     : ${order.email}`);
@@ -154,6 +161,7 @@ async function markPaid(orderId) {
       productName: (product && product[0] && product[0].name) || 'Your product',
       licenseKey,
       downloadUrl: link,
+      orderUrl,
       limit: config.downloadLimit,
     });
     console.log('  email     : sent');

@@ -21,10 +21,19 @@ const config = {
   slipokBranchId: process.env.SLIPOK_BRANCH_ID || '',
   slipokApiUrl: process.env.SLIPOK_API_URL || 'https://api.slipok.com/api/line/apikey',
 
-  // Email is optional. If RESEND_API_KEY/EMAIL_FROM are not set, fulfilment
-  // still works and the success page warns the buyer to save the link.
+  // Email is optional. Fulfilment works without it and the success page warns
+  // the buyer to save the link. Two transports are supported:
+  //  - Gmail SMTP via nodemailer (SMTP_HOST/PORT/USER/PASS) — no custom domain
+  //    needed; EMAIL_FROM must be the same Gmail account as SMTP_USER.
+  //  - Resend HTTP API (RESEND_API_KEY) — only useful once a real domain is
+  //    verified; a .vercel.app URL cannot be verified.
+  // SMTP takes priority when both are configured.
   resendApiKey: process.env.RESEND_API_KEY || '',
   emailFrom: process.env.EMAIL_FROM || '',
+  smtpHost: process.env.SMTP_HOST || '',
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
 
   // Public site URL (used for links inside emails). If it is missing or points
   // at localhost, the API derives the URL from the request headers instead.

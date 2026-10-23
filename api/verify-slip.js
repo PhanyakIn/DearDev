@@ -399,20 +399,26 @@ module.exports = async (req, res) => {
       return sendJson(res, 409, { status: fresh.status, error: 'Order is not payable' });
     }
 
-    // Email is optional (Resend requires a verified domain). Fulfilment is
-    // already complete; the success page shows the licence and download link.
+    // Email is optional (Resend requires a verified domain; Gmail SMTP does
+    // not). Fulfilment is already complete; the success page shows the licence
+    // and download link.
     let emailSent = false;
     const base = siteBaseUrl(req);
     if (isEmailConfigured() && base) {
-      const link =
-        `${base}/success?orderId=${encodeURIComponent(orderId)}` +
-        `&token=${encodeURIComponent(orderToken(orderId))}`;
+      const token = orderToken(orderId);
+      const params =
+        `orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(token)}`;
+      // Primary CTA lands on the /download confirm page: the real quota is
+      // consumed there by a human click, not by a link-scanner prefetch.
+      const directUrl = `${base}/download?${params}`;
+      const orderUrl = `${base}/success?${params}`;
       try {
         await sendDownloadEmail({
           to: reserved.email,
           productName: product.name || 'Your product',
           licenseKey,
-          downloadUrl: link,
+          downloadUrl: directUrl,
+          orderUrl,
           limit: config.downloadLimit,
         });
         emailSent = true;
