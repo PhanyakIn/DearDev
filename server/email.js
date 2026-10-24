@@ -128,12 +128,12 @@ async function sendDownloadEmail({ to, productName, licenseKey, downloadUrl, ord
     <p style="margin:0 0 8px">Your license key:</p>
     <p style="font-size:20px;font-weight:700;letter-spacing:2px;background:#f3f4f6;border-radius:8px;padding:12px 16px;text-align:center">${key}</p>
     <p style="margin:24px 0 8px">
-      <a href="${url}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Download product</a>
+      <a href="${url}" style="display:inline-block; background:#91793d;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">Download product</a>
     </p>
     <p style="margin:8px 0 0;color:#666;font-size:13px">The download link can be used up to ${limit} times — you can revisit the page after payment.</p>
     <p style="margin:8px 0 0;color:#666;font-size:13px">Lost the email? Check your Junk folder, or <a href="${manage}">open your order page</a> to download again.</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
-    <p style="color:#888;font-size:12px;margin:0">DearDev — thanks for supporting my work 😊</p>
+    <p style="color:#888;font-size:12px;margin:0; margin-bottom: 10px;">DearDev — thanks for supporting my work. Love you :&rpar;</p>
   </div>`;
   return sendEmail({
     to,
